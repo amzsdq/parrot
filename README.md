@@ -6,7 +6,14 @@ ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 �
 
 ## Current version
 
-`v0.8.0`
+`v0.8.1`
+
+### Reliability: confirmed normal-send receipt
+
+- 일반 반복 전송은 더 이상 `sendButton.click()` 반환만으로 성공 처리하지 않습니다.
+- `sentCount` 증가는 ChatGPT가 새 user-message DOM을 추가했거나 assistant generation이 시작된 것이 확인된 뒤에만 일어납니다.
+- composer가 비워지거나 바뀐 것만으로는 일반 전송 성공으로 인정하지 않습니다.
+- 5초 안에 강한 receipt가 없으면 `dispatch_unconfirmed`로 기록하고 `sentCount`를 증가시키지 않습니다.
 
 ### Multi-worker dashboard
 
