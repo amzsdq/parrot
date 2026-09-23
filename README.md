@@ -6,24 +6,24 @@ ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 �
 
 ## Current version
 
-`v0.8.2`
+`v0.8.3`
 
 ### Fleet dashboard scaling
 
 - Worker identity는 `A`, `B`, `C` … `Z`, `AA` … 식으로 확장됩니다. 5개 제한이 없습니다.
 - Worker table은 검색/상태 필터에 더해 10/25/50개 단위 pagination을 제공합니다.
-- 20–50 Worker에서도 한 화면이 과도하게 길어지지 않도록 기본 페이지 크기는 25입니다.
-- Chrome이 메모리 절약을 위해 탭을 `discarded` 또는 `frozen` 상태로 둔 경우 일반 연결 실패와 구분해 `절전 해제 필요` / `정지됨`으로 표시하고 Attention에 포함합니다.
-- Dashboard는 현재 활성 ChatGPT 탭에 종속되지 않는 extension control plane입니다.
-- Chrome Tabs API로 열려 있는 다른 ChatGPT 탭을 조회하고, 해당 탭의 content script에 메시지를 보내 제어합니다.
-- Live dashboard는 채팅 본문을 의미 분석하지 않습니다. 탭/DOM의 구조적 신호만 사용합니다.
+- 기본 페이지 크기는 25입니다.
+- Chrome 탭의 `discarded` / `frozen` 상태를 일반 연결 실패와 구분합니다.
+- Dashboard는 활성 ChatGPT 탭에 종속되지 않는 extension control plane입니다.
+- Live dashboard는 채팅 본문을 의미 분석하지 않고 탭/DOM의 구조적 신호만 사용합니다.
 
-### Reliability: confirmed normal-send receipt
+### Reliability: strong dispatch receipts
 
-- 일반 반복 전송은 `sendButton.click()` 반환만으로 성공 처리하지 않습니다.
-- `sentCount` 증가는 ChatGPT가 새 user-message DOM을 추가했거나 assistant generation이 시작된 것이 확인된 뒤에만 일어납니다.
-- composer가 비워지거나 바뀐 것만으로는 일반 전송 성공으로 인정하지 않습니다.
-- 5초 안에 강한 receipt가 없으면 `dispatch_unconfirmed`로 기록하고 `sentCount`를 증가시키지 않습니다.
+- 일반 반복 전송과 WAKE/MESSAGE route delivery 모두 `sendButton.click()` 반환만으로 성공 처리하지 않습니다.
+- 성공 receipt는 새 user-message DOM 또는 assistant generation 시작만 인정합니다.
+- composer clear/change는 성공 증거로 인정하지 않습니다.
+- 일반 반복 전송에서 5초 안에 강한 receipt가 없으면 `dispatch_unconfirmed`로 기록하고 `sentCount`를 증가시키지 않습니다.
+- WAKE/MESSAGE에서 클릭 후 5초 안에 강한 receipt가 없으면 `dispatch_ambiguous`로 격리합니다. 실제 전송이 성공했을 가능성이 있으므로 자동 재전송하지 않아 중복 전달 위험을 줄입니다.
 
 ## Protocol
 
