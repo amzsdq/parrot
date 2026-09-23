@@ -1,49 +1,49 @@
 # Parrot development checkpoint
 
 Status: CONTINUE
-Latest version: v0.8.1
-Artifact SHA-256: 17e2b0847edcae5d848bda481c5036b02c867f51a5b39c2501f775b06117e0a0
+Latest version: v0.8.2
+Artifact SHA-256: df0106bebcd9b21a8d054801e5a723c672f93e5b72f0ba24aa38c18038d259a1
 
-## Completed in v0.8.1
+## Completed in v0.8.2
 
-- Hardened normal repeat-send accounting so `sentCount` no longer increments immediately after `sendButton.click()`.
-- Captures a structural pre-click baseline using the count of `[data-message-author-role="user"]` nodes.
-- A normal send is confirmed only when either:
-  - assistant generation starts, or
-  - the user-message node count increases after the click.
-- Composer clear/change is deliberately NOT sufficient for normal-send success because it can mutate without proving the turn was accepted.
-- If neither strong receipt appears within 5 seconds, the send returns `dispatch_unconfirmed`, records an error, and does not emit `PARROT_SENT`.
-- If a user-message node is confirmed before generation begins, the existing generation grace watch remains armed so a later failure to begin generation is still surfaced.
+- Added client-side Worker pagination to the dashboard: 10 / 25 / 50 rows per page, default 25.
+- Search and status-filter changes reset pagination to page 1; next/previous controls clamp to valid pages.
+- Kept A…Z, AA… Worker identity scheme and smoke-tested 50 workers (`A`, `Z`, `AA`, `AX`).
+- Dashboard now distinguishes Chrome tab lifecycle states that matter operationally:
+  - `discarded` => `절전 해제 필요`
+  - `frozen` => `정지됨`
+- Discarded/frozen workers are counted as Attention instead of being conflated with generic content-script failure.
+- No new permissions were added.
 
 ## Reference / rationale
 
-- Chrome Extensions official architecture guidance treats content scripts as the page-DOM observation layer and extension messaging as the coordination mechanism between content scripts and the service worker. This supports keeping dispatch evidence in the ChatGPT content script rather than guessing from the dashboard/background state.
-- Reference: https://developer.chrome.com/docs/extensions/develop
-- Reference: https://developer.chrome.com/docs/extensions/mv2/reference/runtime
-- Reliability choice: require observable page state caused by an accepted turn (new user-message DOM or generation start), rather than trusting the imperative `HTMLElement.click()` call itself.
+- Chrome Tabs API documents `discarded` as content unloaded from memory until activation and `frozen` as a loaded tab that cannot execute tasks/timers until activation. These are therefore first-class structural fleet states rather than generic errors.
+- Reference: https://developer.chrome.com/docs/extensions/reference/api/tabs
+- Carbon Data Table guidance recommends search/filter in the table toolbar and pagination when the amount of data is too large for one view; pagination belongs below the related data table.
+- References:
+  - https://carbondesignsystem.com/components/data-table/usage/
+  - https://carbondesignsystem.com/components/pagination/usage/
+- UX decision: default 25 rows balances fleet scan density with page length while still allowing 10 or 50 at user choice. No server-side pagination is needed because Parrot fleet state is local extension storage.
 
 ## Verification
 
-- `node --check`: content.js, background.js, chatgpt-adapter.js PASS
+- `node --check`: background.js, dashboard.js, content.js, popup.js, chatgpt-adapter.js PASS
 - manifest JSON parse PASS
-- structural DOM smoke test for `getUserMessageCount()` baseline/increment PASS
+- 50-worker identity/pagination smoke test PASS (`A`, `Z`, `AA`, `AX`)
 - ZIP integrity PASS
-- manifest version = 0.8.1
+- manifest version = 0.8.2
 
-## Existing v0.8.0 multi-worker baseline
+## Existing reliability baseline
 
-- Worker identities A, B, C … Z, AA … with no five-worker limit.
-- Cross-tab dashboard control through Chrome Tabs messaging.
-- Structural live status only: tab/content-script/generating/composer/draft/pending-route.
-- Focus/open works for worker tabs including tabs in another Chrome window.
-- Existing Route IDs preserved; new workers default Route ID to worker label.
+- Normal repeat-send `sentCount` increments only after strong receipt: new user-message DOM or assistant generation start.
+- Multi-worker cross-tab control remains dashboard-first and uses structural state only.
 
 ## Remaining risks / next high-value work
 
-1. Run a real ChatGPT browser regression test of the new strong normal-send receipt; the local smoke test validates selector/count mechanics but cannot prove future ChatGPT DOM stability.
+1. Run a real ChatGPT browser regression test of the strong normal-send receipt; local selector/count smoke tests cannot prove future ChatGPT DOM stability.
 2. Route delivery still accepts weaker `composer_cleared` / `composer_changed` receipts. Evaluate whether to reuse the strong receipt without causing duplicate WAKE/MESSAGE delivery risk.
-3. Stress-test dashboard with 20–50 workers, including search/filter, multiple Chrome windows, and stale/discarded tabs.
-4. Add bounded stale content-script recovery only if tests show it is needed; avoid broader permissions without evidence.
+3. Exercise discarded/frozen recovery with real Chrome memory-saver behavior; add bounded recovery only if evidence shows it is needed.
+4. Add sortable Worker columns only if fleet tests show search/filter/pagination are insufficient; avoid UI complexity without evidence.
 5. Continue keeping chat semantic content out of Parrot; use only structural state for fleet monitoring.
 
 ## Scope
