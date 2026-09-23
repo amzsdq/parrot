@@ -1,49 +1,50 @@
 # Parrot development checkpoint
 
 Status: CONTINUE
-Latest version: v0.8.0
-Artifact SHA-256: 4c9d27a0e866fe60802f19717a962034dbfc7c1ba873d116359e4566075dc1ef
+Latest version: v0.8.1
+Artifact SHA-256: 17e2b0847edcae5d848bda481c5036b02c867f51a5b39c2501f775b06117e0a0
 
-## Completed in v0.8.0
+## Completed in v0.8.1
 
-- Reworked dashboard from target cards into a scalable worker data table.
-- Added Worker identities A, B, C … Z, AA … with no five-worker limit.
-- Added cross-tab dashboard control through Chrome Tabs messaging.
-- Added dashboard live structural status:
-  - tab open / closed
-  - content script reachable
-  - response generating
-  - composer ready
-  - draft present
-  - pending route count
-- Added focus/open behavior for a worker tab, including tabs in another Chrome window.
-- Dashboard START explicitly dispatches to the matching open worker tab when possible; if closed, state remains armed for later tab load.
-- Existing Route IDs are preserved. New workers default Route ID to their worker label.
-- Popup target selector now prefixes Worker identity.
+- Hardened normal repeat-send accounting so `sentCount` no longer increments immediately after `sendButton.click()`.
+- Captures a structural pre-click baseline using the count of `[data-message-author-role="user"]` nodes.
+- A normal send is confirmed only when either:
+  - assistant generation starts, or
+  - the user-message node count increases after the click.
+- Composer clear/change is deliberately NOT sufficient for normal-send success because it can mutate without proving the turn was accepted.
+- If neither strong receipt appears within 5 seconds, the send returns `dispatch_unconfirmed`, records an error, and does not emit `PARROT_SENT`.
+- If a user-message node is confirmed before generation begins, the existing generation grace watch remains armed so a later failure to begin generation is still surfaced.
 
-## UX references used
+## Reference / rationale
 
-- Chrome Extensions Tabs API and extension/content-script message passing for cross-tab control.
-- Carbon Design System data-table guidance for dense resource management, toolbar/search/filter, inline actions, and progressive detail disclosure.
-- Atlassian/Carbon status-label patterns for compact semantic state display.
+- Chrome Extensions official architecture guidance treats content scripts as the page-DOM observation layer and extension messaging as the coordination mechanism between content scripts and the service worker. This supports keeping dispatch evidence in the ChatGPT content script rather than guessing from the dashboard/background state.
+- Reference: https://developer.chrome.com/docs/extensions/develop
+- Reference: https://developer.chrome.com/docs/extensions/mv2/reference/runtime
+- Reliability choice: require observable page state caused by an accepted turn (new user-message DOM or generation start), rather than trusting the imperative `HTMLElement.click()` call itself.
 
 ## Verification
 
-- node --check: background.js, content.js, dashboard.js, popup.js, chatgpt-adapter.js PASS
+- `node --check`: content.js, background.js, chatgpt-adapter.js PASS
 - manifest JSON parse PASS
-- Chromium dashboard render smoke test PASS
-  - five workers rendered
-  - summary metrics rendered
-  - no page errors in the mocked live-state test
+- structural DOM smoke test for `getUserMessageCount()` baseline/increment PASS
 - ZIP integrity PASS
-- manifest version = 0.8.0
+- manifest version = 0.8.1
+
+## Existing v0.8.0 multi-worker baseline
+
+- Worker identities A, B, C … Z, AA … with no five-worker limit.
+- Cross-tab dashboard control through Chrome Tabs messaging.
+- Structural live status only: tab/content-script/generating/composer/draft/pending-route.
+- Focus/open works for worker tabs including tabs in another Chrome window.
+- Existing Route IDs preserved; new workers default Route ID to worker label.
 
 ## Remaining risks / next high-value work
 
-1. Normal repeat-send accounting still increments sentCount immediately after click. Add a conservative dispatch receipt before PARROT_SENT without introducing duplicate-send risk.
-2. Test dashboard behavior with a larger fleet (20–50 workers), including search/filter and multiple Chrome windows.
-3. Add a bounded stale-tab/content-script recovery path that does not require broader permissions unless evidence shows it is necessary.
-4. Continue keeping chat semantic content out of Parrot; use only structural state for fleet monitoring.
+1. Run a real ChatGPT browser regression test of the new strong normal-send receipt; the local smoke test validates selector/count mechanics but cannot prove future ChatGPT DOM stability.
+2. Route delivery still accepts weaker `composer_cleared` / `composer_changed` receipts. Evaluate whether to reuse the strong receipt without causing duplicate WAKE/MESSAGE delivery risk.
+3. Stress-test dashboard with 20–50 workers, including search/filter, multiple Chrome windows, and stale/discarded tabs.
+4. Add bounded stale content-script recovery only if tests show it is needed; avoid broader permissions without evidence.
+5. Continue keeping chat semantic content out of Parrot; use only structural state for fleet monitoring.
 
 ## Scope
 
