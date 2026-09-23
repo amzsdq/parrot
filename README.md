@@ -6,30 +6,24 @@ ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 �
 
 ## Current version
 
-`v0.8.1`
+`v0.8.2`
+
+### Fleet dashboard scaling
+
+- Worker identity는 `A`, `B`, `C` … `Z`, `AA` … 식으로 확장됩니다. 5개 제한이 없습니다.
+- Worker table은 검색/상태 필터에 더해 10/25/50개 단위 pagination을 제공합니다.
+- 20–50 Worker에서도 한 화면이 과도하게 길어지지 않도록 기본 페이지 크기는 25입니다.
+- Chrome이 메모리 절약을 위해 탭을 `discarded` 또는 `frozen` 상태로 둔 경우 일반 연결 실패와 구분해 `절전 해제 필요` / `정지됨`으로 표시하고 Attention에 포함합니다.
+- Dashboard는 현재 활성 ChatGPT 탭에 종속되지 않는 extension control plane입니다.
+- Chrome Tabs API로 열려 있는 다른 ChatGPT 탭을 조회하고, 해당 탭의 content script에 메시지를 보내 제어합니다.
+- Live dashboard는 채팅 본문을 의미 분석하지 않습니다. 탭/DOM의 구조적 신호만 사용합니다.
 
 ### Reliability: confirmed normal-send receipt
 
-- 일반 반복 전송은 더 이상 `sendButton.click()` 반환만으로 성공 처리하지 않습니다.
+- 일반 반복 전송은 `sendButton.click()` 반환만으로 성공 처리하지 않습니다.
 - `sentCount` 증가는 ChatGPT가 새 user-message DOM을 추가했거나 assistant generation이 시작된 것이 확인된 뒤에만 일어납니다.
 - composer가 비워지거나 바뀐 것만으로는 일반 전송 성공으로 인정하지 않습니다.
 - 5초 안에 강한 receipt가 없으면 `dispatch_unconfirmed`로 기록하고 `sentCount`를 증가시키지 않습니다.
-
-### Multi-worker dashboard
-
-- Worker identity는 `A`, `B`, `C` … `Z`, `AA` … 식으로 확장됩니다. 5개 제한이 없습니다.
-- Dashboard는 현재 활성 ChatGPT 탭에 종속되지 않는 extension control plane입니다.
-- Chrome Tabs API로 열려 있는 다른 ChatGPT 탭을 조회하고, 해당 탭의 content script에 메시지를 보내 제어합니다.
-- Live dashboard는 채팅 본문을 의미 분석하지 않습니다. 다음 구조적 신호만 사용합니다.
-  - tab open / closed
-  - content-script reachable / unavailable
-  - response generating
-  - composer available
-  - draft present
-  - pending route count
-- 기존 Target의 Route ID는 유지합니다.
-- 새 Worker의 Route ID 기본값은 Worker label입니다.
-- Dashboard UI는 많은 Worker를 빠르게 스캔할 수 있도록 card grid에서 dense data table + status label + progressive detail 구조로 변경했습니다.
 
 ## Protocol
 
