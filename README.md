@@ -6,7 +6,7 @@ ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 �
 
 ## Current version
 
-`v0.8.3`
+`v0.8.4`
 
 ### Fleet dashboard scaling
 
@@ -24,6 +24,10 @@ ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 �
 - composer clear/change는 성공 증거로 인정하지 않습니다.
 - 일반 반복 전송에서 5초 안에 강한 receipt가 없으면 `dispatch_unconfirmed`로 기록하고 `sentCount`를 증가시키지 않습니다.
 - WAKE/MESSAGE에서 클릭 후 5초 안에 강한 receipt가 없으면 `dispatch_ambiguous`로 격리합니다. 실제 전송이 성공했을 가능성이 있으므로 자동 재전송하지 않아 중복 전달 위험을 줄입니다.
+- v0.8.4부터 ambiguous route는 Dashboard Routing 표에서만 명시적으로 처리합니다.
+  - `재시도`: 중복 전송 가능성을 경고하고 사용자 확인 뒤에만 다시 dispatch합니다.
+  - `해결 처리`: 아무 메시지도 보내지 않고 route를 `resolved`로 종료합니다.
+- ambiguous route는 자동 재시도되지 않습니다.
 
 ## Protocol
 
