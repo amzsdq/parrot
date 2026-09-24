@@ -63,12 +63,12 @@ Required criteria:
 - M2-C3 PASS — running response targets auto-arm only when `sendImmediately !== false`.
 - M2-C4 PASS — deleted/non-running/cross-URL targets do not auto-arm and stale runner tokens are pruned.
 - M2-C5 PASS — response↔interval transitions fence the old runner and preserve only one effective runner.
-- M2-C6 UNVERIFIED — startup/storage/manual `PARROT_START` races have deterministic regression evidence.
-- M2-C7 UNVERIFIED — popup start ordering preserves intended initial delay and `sendImmediately=false` semantics.
-- M2-C8 UNVERIFIED — exact-head CI is green after the newest lifecycle race/ordering changes.
+- M2-C6 UNVERIFIED — startup/storage/manual `PARROT_START` races have deterministic regression evidence. Existing `runners.has()` is the implementation fence, but a deterministic race harness is still required.
+- M2-C7 PASS — popup start ordering preserves intended initial delay and `sendImmediately=false` semantics. Evidence: audit found storage `onChanged` could auto-arm response mode at delay 0 before explicit `PARROT_START`; fixed by central `ParrotRunnerPolicy.autoArmDelayMs()` used by storage/reload auto-arm, with policy tests for response delay, zero/negative clamp, and interval zero-delay. `sendImmediately=false` remains excluded by `shouldArm()`.
+- M2-C8 UNVERIFIED — exact-head CI is green after the newest lifecycle race/ordering changes. Previous exact-head run 35974755563 for commit 6c8570b7 passed all 24 functional/verification steps; newest delay fix still needs exact-head CI.
 
 Current next criterion:
-M2-C6, then M2-C7, then M2-C8.
+M2-C6, then M2-C8.
 
 ### M3 — Multi-worker dashboard and structural fleet UX
 Status: IN_PROGRESS
