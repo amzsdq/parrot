@@ -1,27 +1,30 @@
 # Parrot / 앵무새
 
-ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 처리하는 로컬 Chrome Extension입니다. 현재 실제 provider adapter는 ChatGPT만 지원합니다. Claude / Gemini / Grok은 adapter boundary만 유지하며 아직 구현하지 않습니다.
+ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 처리하는 로컬 Chrome Extension입니다. 실제 provider adapter는 현재 ChatGPT만 지원합니다. Claude / Gemini / Grok은 adapter boundary만 유지하며 아직 구현하지 않습니다.
 
-## Current version
+## Status
+`v0.8.7` candidate exists, but it is **NON-RELEASE** until the real Chromium + ChatGPT M6 smoke gate passes. Static CI is not a browser-compatibility claim.
 
-`v0.8.7` reconstruction in progress. Static/repository gates are not a release claim; real Chromium + ChatGPT smoke remains required before release.
+## Candidate install for M6 testing
+1. Use the candidate bound to source commit `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691` / Actions run `35979821480`.
+2. Extract it so `manifest.json` is directly inside the selected extension directory.
+3. In Chromium/Chrome extension management, enable Developer mode and choose **Load unpacked**.
+4. Open the popup, register/configure a ChatGPT conversation target, and use Dashboard for fleet control.
+5. Execute `docs/LIVE_SMOKE_CHECKLIST.md`; record only structural evidence in `docs/LIVE_SMOKE_RESULT_TEMPLATE.md`, never chat prose.
+6. Any observed failure blocks release and reopens the affected earlier milestone.
 
-## Current capabilities
-
-- Worker identity: `A`, `B`, `C` … `Z`, `AA` …; fixed five-worker limit 없음.
-- Dashboard is an extension control plane independent of the active ChatGPT tab. It can search/filter/page workers and directly Start/Stop an exact matching open ChatGPT worker without activating that tab; `열기` remains an explicit separate action.
-- Dashboard fleet model supports 10/25/50 pagination and structural attention filtering; discarded/frozen tabs are distinct structural states.
-- Live status never semantically reads chat prose.
-- Normal repeat sends and WAKE/MESSAGE delivery require a strong receipt: new user-message DOM count or assistant generation start, not merely click/composer change.
-- Unconfirmed routed sends become durable `ambiguous`, are fenced from automatic resend, and expose explicit Dashboard Retry/Resolve actions.
-- Ambiguity receipt is persisted to bounded `chrome.storage.local` outbox before background notification.
-- `delivered` and manually `resolved` routes are terminal history.
-- Structural cooldown classification never reads assistant/user prose. Persisted cooldown deadlines gate both repeat runners and routed sends.
-- Cooldown ladder: rate-limit 10→20→40→60 minutes; transient 2→5→10→20 minutes. Targets may disable cooldown handling.
-- Runner ownership is fenced by a token registry: startup/reload, storage reconciliation, explicit `PARROT_START`, and mode transitions cannot retain two effective runners for one target.
+## Capabilities
+- Worker identity A..Z, AA... with no fixed five-worker limit.
+- Dashboard search/filter/10·25·50 pagination and direct exact-target Start/Stop/Open while Dashboard remains active.
+- Structural fleet attention states including discarded/frozen/error/cooldown; no semantic chat-prose status parsing.
+- Strong send receipt requires new user-message DOM count or assistant generation start, not click/composer change alone.
+- Unconfirmed routed sends become durable `ambiguous`, automatic resend is fenced, Dashboard Retry/Resolve is explicit.
+- Ambiguity receipt persists to bounded local outbox before background notification.
+- Structural cooldown backpressure: rate-limit 10→20→40→60 minutes; transient 2→5→10→20 minutes.
+- Token-fenced single effective runner across startup/reload, storage reconciliation, explicit PARROT_START, and mode transitions.
+- Configurable onboarding/completion/WAKE/MESSAGE templates; compact popup with overlay editors.
 
 ## Protocol
-
 ```text
 COMPLETE
 https://parrot.invalid/complete/<runId>
@@ -32,13 +35,10 @@ https://parrot.invalid/wake/<sourceRunId>/<eventId>?to=<targetRouteId>
 MESSAGE
 https://parrot.invalid/message/<sourceRunId>/<eventId>?to=<targetRouteId>&ref=<reference>
 ```
-
-`MESSAGE.ref` is an explicit reference such as a GitHub URL or document ID. Parrot does not fetch or semantically read surrounding chat prose.
+`MESSAGE.ref` is an explicit reference such as a GitHub URL/document ID. Parrot does not fetch or semantically read surrounding chat prose.
 
 ## Repository verification
-
 Run from repository root:
-
 ```text
 node scripts/test-route-state.mjs
 node scripts/test-route-queue.mjs
@@ -56,38 +56,19 @@ node scripts/validate-contracts.mjs
 node scripts/validate-v087-integration.mjs
 node scripts/verify-repo.mjs
 ```
+GitHub Actions `Route State Contract` runs these gates and builds a versioned NON-RELEASE candidate evidence artifact after they pass. The candidate build uses deterministic `zip -X`, archive integrity testing, sorted file listing, SHA-256 generation, and manifest-version verification.
 
-GitHub Actions `Route State Contract` runs these production integration/rebuildability gates. Contract/static success and real-browser success are intentionally separate claims.
+## Reconstruction provenance
+Exact later v0.8.6 runtime bytes were not recovered, so v0.8.7 is a deliberate reconstruction from recovered behavior plus verified contracts, not a byte-exact v0.8.6 claim. Recovered popup numeric clamp/default regressions were repaired and guarded.
 
-## v0.8.7 reconstruction status
-
-Exact v0.8.6 `background.js`, `content.js`, `dashboard.js` bytes were not recovered, so this runtime is not claimed byte-exact v0.8.6. The repository reconstructs v0.8.7 from recovered behavior plus later verified contracts.
-
-Current production slice:
-- classic MV3 background with route/signal/repeat primitives;
-- pending-only routed delivery plus structural cooldown backpressure;
-- durable ambiguity outbox and explicit Retry/Resolve;
-- strong structural send receipt in `content.js`;
-- response/interval runner lifecycle with exact-URL auto-arm, delay/sendImmediately policy, and token-fenced single-runner registry;
-- dashboard direct exact-target Start/Stop/Open, fleet search/filter/pagination, actionable structural activity labels, and ambiguity actions;
-- compact popup with overlay editors for completion/onboarding/WAKE/MESSAGE/advanced settings.
-
-Real browser gate: `docs/LIVE_SMOKE_CHECKLIST.md`. Repository/static gates never substitute for it.
-
-## popup.js provenance
-
-Recovered numeric clamp/default regressions were repaired. CI checks delay ≥ 0, interval ≥ 1, maxRepeats ≥ 0, runtimeMin ≥ 0 plus cooldown/storage contracts.
+## Known limitations before release
+- Claude/Gemini/Grok provider implementations are deferred.
+- Real behavior depends on current ChatGPT DOM/control structure; M6 must validate the exact candidate.
+- Ambiguity and genuine rate-limit states may not be safely/naturally observable during smoke. If not observed, they remain explicit release limitations rather than being called PASS.
+- Candidate Actions artifacts are temporary test/evidence bundles, not final release artifacts.
 
 ## Development state
+`docs/MILESTONES.md` is the single work/progress authority; no active BATON layer. `docs/DEVELOPMENT_CHECKPOINT.md` is durable summary/evidence; `docs/DEVELOPMENT_LOG.md` is historical evidence only.
 
-`docs/MILESTONES.md` is the single durable work-supply/progress authority. There is no active BATON layer. `docs/DEVELOPMENT_CHECKPOINT.md` is durable summary/evidence and `docs/DEVELOPMENT_LOG.md` is historical evidence only.
-
-## Development principles
-
-- ChatGPT-first
-- dashboard-first management
-- compact popup, no default vertical scrolling
-- reliability / simplification / regression fixes before feature growth
-- COMPLETE via exact `parrot.invalid` runId link
-- WAKE / MESSAGE routing without semantic chat reading
-- authoritative references before material UX/API/architecture changes
+## Principles
+ChatGPT-first; dashboard-first management; compact popup; reliability/simplification/recoverability before feature growth; exact runId COMPLETE; structural WAKE/MESSAGE; no semantic chat reading; authoritative references before material UX/API/architecture changes.
