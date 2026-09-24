@@ -2,75 +2,62 @@
 
 Status: CONTINUE
 Current line: v0.8.7-reconstruction
+Current milestone: M5 — Rebuildable candidate package / VERIFY
 
-## Milestone execution model
+## Execution model
+- `docs/MILESTONES.md` is the single work-supply/progress authority. No active BATON layer.
+- Milestones pass `PLAN -> BUILD -> VERIFY -> FIX -> VERIFY ... -> DONE`; UNVERIFIED != PASS.
+- Normal stop gates are only ALL_MILESTONES_DONE or verified SUCCESSOR_HANDOFF_COMPLETE.
+- Issue #1 GitHub comment `created_at` is timing authority.
 
-- `docs/MILESTONES.md` is the single durable work-supply and progress authority. There is no active BATON layer.
-- Every milestone must pass `PLAN -> BUILD -> VERIFY -> FIX -> VERIFY ... -> DONE`.
-- PASS / FAIL / UNVERIFIED are explicit; UNVERIFIED is never PASS.
-- A milestone is DONE only when every required criterion is PASS with durable evidence.
-- Completing a criterion, milestone, CI run, ZIP, or checkpoint is not a normal stop condition.
-- Normal stop conditions are only `ALL_MILESTONES_DONE` or verified `SUCCESSOR_HANDOFF_COMPLETE`.
-- Historical BATON entries in DEVELOPMENT_LOG are legacy history only and are not read for continuation.
+## Completed milestones
 
-## Relay / evidence model
+### M0 — scope/relay contract — DONE
+ChatGPT-first, structural signals/status, dashboard-first direction, milestone-only durable control model.
 
-- `docs/MILESTONES.md` is read first on every wake for current phase, unmet criteria, and next work.
-- `docs/DEVELOPMENT_LOG.md` is historical evidence only; old BATON snapshots are legacy and never drive current work.
-- The scheduler normally prearms a successor wake at +14 minutes, but 14 minutes is not a stop gate. The current OWNER continues useful work until verified successor handoff or all milestones are DONE.
-- Issue #1 `[PARROT_RELAY_WORK_MARKERS]` WAKE/START/END comments are the sole timing authority. Fetch the concrete comment REST resource when connector comment listings omit `created_at`.
+### M1 — routing/delivery reliability — DONE
+Exact normalized target routing; no first-tab fallback; strong structural receipt; ambiguity persist-before-notify + fail-closed no-auto-retry + Retry/Resolve; COMPLETE/WAKE/MESSAGE structural runId/event dedupe.
 
-## Current implementation state
+### M2 — runner lifecycle/reload recovery — DONE
+- Added `runner-policy.js` exact-URL auto-arm and response delay/sendImmediately policy.
+- Added `runner-registry.js` as runtime authority for single effective runner.
+- Startup/reload, storage reconciliation and explicit PARROT_START converge through registry admission.
+- Mode transition prunes/fences old token; stale release cannot delete replacement.
+- Deterministic registry overlap/cleanup/recovery harness is in CI.
+- Exact-head integration suite succeeded at commit `4b2f6fd87accec89d07657356c153775607b8540`, Actions run `35978969555`.
 
-The repository is now deliberately reconstructing the missing later runtime as v0.8.7 rather than claiming byte-exact v0.8.6 source.
+### M3 — multi-worker dashboard/static fleet UX — DONE
+- Dashboard directly Start/Stops exact matching open ChatGPT workers without activating them; Open is separate.
+- Start creates fresh runId/completion URL; Stop persists non-running state so content reconciliation fences runner.
+- `dashboard-model.js` owns tested search/filter/attention/pagination/actionable-label logic.
+- 73-worker fixture covers pagination, search, running/open/attention filters and labels.
+- Ambiguous Retry/Resolve and visible action feedback are source/model guarded.
+- Real browser dashboard behavior remains M6, not silently treated as proven here.
 
-Verified/implemented:
+### M4 — popup/templates/cooldown/static recovery UX — DONE
+- Popup clamps/defaults, configurable onboarding/WAKE/MESSAGE/completion surfaces, cooldown persistence/backpressure retained.
+- Default popup overflow is suppressed; advanced editors are fixed overlays.
+- `test-popup-ux-contract.mjs` guards compact layout/routing configuration/status surfaces.
+- Real viewport/usability remains M6.
 
-- ChatGPT-first provider boundary; Claude/Gemini/Grok implementations remain out of scope.
-- Dashboard supports scalable worker labels A…Z, AA…, cross-tab control, pagination, and structural fleet states.
-- Exact normalized target URL is mandatory for routing; the unsafe same-origin `tabs[0]` fallback was removed and CI-guarded.
-- Strong structural delivery receipt uses user-message count / generation evidence rather than semantic chat parsing.
-- Ambiguous delivery is persisted before notification, fenced from automatic retry, and exposed through explicit Retry/Resolve flows.
-- COMPLETE / WAKE / MESSAGE use structural `parrot.invalid` signal links with durable signal-id dedupe.
-- Prompt composition is separated into `prompt-compose.js`.
-- Repeat/cooldown policy is separated into `repeat-policy.js`; rate-limit ladder is 10→20→40→60 minutes and transient ladder is 2→5→10→20 minutes.
-- Popup numeric clamps/defaults were restored to the recovered authoritative popup target blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`.
-- `runner-policy.js` defines exact-URL automatic arming: running interval targets auto-arm; running response targets auto-arm only when `sendImmediately !== false`; paused/stopped/completed/cross-URL targets do not.
-- Content runtime now consumes `ParrotRunnerPolicy.shouldArm()` on startup after ambiguity recovery and on target storage changes. Existing `runners.has()` fences duplicate explicit `PARROT_START` + storage arming.
-- Content runtime prunes deleted/non-running targets and now tracks runner mode separately so a running response↔interval mode transition fences the old token and arms the new mode without allowing the old runner to delete the replacement.
-- Runner loops use token-aware `finally` cleanup so thrown failures do not permanently strand a runner id.
+## Current M5 evidence
+- After dashboard-model refactor, the stale cooldown guard failed once because it still expected dashboard-local `hasCooldown`; product-specific dashboard/popup tests were already PASS. Guard was corrected at `c33447f39397fc482895b7dc781ac917d3bc6f87`; Actions run `35979625616` then completed SUCCESS across the full pre-packaging suite.
+- Candidate packaging was added to Route State Contract: deterministic `zip -X`, archive integrity test, sorted content list, SHA-256, manifest version check, and NON-RELEASE artifact upload.
+- First packaging attempt at `fbe0b60157fd86f96ff53b45b3ef570bb4bb032c` reached all source/integration/rebuildability checks PASS but failed inside the new packaging shell step; manifest-version verification was simplified in the next workflow commit `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`. Exact-head packaging CI remains to be observed before M5 can close.
+- Candidate remains explicitly NON-RELEASE until M6.
 
-## Latest verification evidence
-
-- Commit `8e647da7e86e5b83450edea16e736242114e453d` (`Fence runner mode transitions`) passed Route State Contract run `35974714130`.
-- That run passed syntax checks for runtime modules plus route-state, route-queue, signal, prompt, repeat, runner-policy, adapter-structure, cooldown-storage, contract validation, v0.8.7 integration validation, and repository rebuildability checks.
-- `scripts/validate-v087-integration.mjs` additionally guards actual runner-policy use, storage reconciliation, startup-after-ambiguity ordering, and runner mode fencing. The guard itself is committed at `6c8570b74d7322655c7f81031d521232e9512cbf`; its exact-head CI must be checked before claiming that last guard commit verified.
+## M6 live gate
+`docs/LIVE_SMOKE_CHECKLIST.md` now explicitly covers exact-target dashboard Start/Stop while Dashboard stays active, response/interval execution, configured response delay/sendImmediately=false, reload recovery/single-runner fencing, COMPLETE/WAKE/MESSAGE, ambiguity, structural cooldown, fleet pagination/action feedback, and popup viewport. Static CI never substitutes for this gate.
 
 ## Recovered baseline evidence
-
 Recovered Library `parrot_extension_v0.8.0.zip` SHA-256: `4c9d27a0e866fe60802f19717a962034dbfc7c1ba873d116359e4566075dc1ef`.
+Important historical blobs: background `c32103090f349f3397ea489594236f2433c55af6`; content `c1e41165d7d5f7fda794aea3f120ec8775782e32`; dashboard `72210244ef1b7f89c0f593d4abda77a72865319d`; recovered popup target `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`.
+Do not label old runtime bytes v0.8.6; they predate strong-receipt/ambiguity behavior.
 
-Important Git blobs:
-
-- v0.8.0 `background.js`: `c32103090f349f3397ea489594236f2433c55af6`
-- v0.8.0 `content.js`: `c1e41165d7d5f7fda794aea3f120ec8775782e32`
-- v0.8.0 `dashboard.js`: `72210244ef1b7f89c0f593d4abda77a72865319d`
-- recovered authoritative popup target: `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`
-
-Do not copy the old background/content/dashboard bytes and label them v0.8.6; they predate the strong-receipt/ambiguity behavior.
-
-## Release gates still open
-
-1. Verify exact-head CI after the latest lifecycle guard change.
-2. Add stronger deterministic lifecycle coverage around startup/storage/manual-start races and mode transitions where feasible without pretending static tests are browser proof.
-3. Audit popup explicit `PARROT_START` versus storage-driven arming so initial delay / `sendImmediately=false` semantics remain deterministic; keep one effective runner via token fencing.
-4. Build a repository-only v0.8.7 candidate ZIP and verify ZIP integrity/rebuildability.
-5. Execute `docs/LIVE_SMOKE_CHECKLIST.md` on a real Chromium + ChatGPT extension surface. Static CI is not a substitute for this release gate.
-
-## Reference rationale
-
-Chrome Storage documents `storage.onChanged` as the event for reacting to stored option/state changes, which supports storage-driven lifecycle reconciliation. Chrome Tabs documents `tabs.sendMessage()` as content-script messaging, retained for explicit control where needed. Runtime/message passing remains structural control only; Parrot does not semantically read assistant/user chat text.
+## Remaining release path
+1. Close M5 only after exact candidate-head CI + ZIP integrity/hash/artifact evidence.
+2. Execute M6 real Chromium + ChatGPT checklist against exact candidate SHA. Observed failures reopen affected earlier milestones.
+3. M7 produces final release ZIP/instructions/limitations only after M6.
 
 ## Scope
-
-Prefer reliability, simplification, recoverability, regression fixes, low bootstrap overhead, and sustained useful utilization over feature expansion. Do not add Claude/Gemini/Grok implementations before the ChatGPT-first release gate is closed.
+Prefer reliability, simplification, recoverability, regression fixes, low bootstrap overhead, and sustained useful utilization over feature expansion. Do not add Claude/Gemini/Grok implementations before ChatGPT-first release gate closes.
