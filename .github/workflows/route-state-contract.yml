@@ -4,14 +4,18 @@ on:
   push:
     paths:
       - 'extension/route-state.js'
+      - 'extension/route-queue.js'
       - 'tests/route-state-contract.json'
       - 'scripts/test-route-state.mjs'
+      - 'scripts/test-route-queue.mjs'
       - '.github/workflows/route-state-contract.yml'
   pull_request:
     paths:
       - 'extension/route-state.js'
+      - 'extension/route-queue.js'
       - 'tests/route-state-contract.json'
       - 'scripts/test-route-state.mjs'
+      - 'scripts/test-route-queue.mjs'
       - '.github/workflows/route-state-contract.yml'
 
 permissions:
@@ -27,5 +31,8 @@ jobs:
         with:
           node-version: '22'
       - run: node --check extension/route-state.js
+      - run: node --check extension/route-queue.js
       - run: node --check scripts/test-route-state.mjs
+      - run: node --check scripts/test-route-queue.mjs
       - run: node scripts/test-route-state.mjs
+      - run: node scripts/test-route-queue.mjs
