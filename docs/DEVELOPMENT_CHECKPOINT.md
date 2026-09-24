@@ -9,7 +9,7 @@ Current criterion: M6-C2
 `docs/MILESTONES.md` is single work/progress authority; no BATON. PLAN→BUILD→VERIFY→FIX→VERIFY→DONE; UNVERIFIED != PASS. Normal stop only ALL_MILESTONES_DONE or verified SUCCESSOR_HANDOFF_COMPLETE. GitHub issue #1 comment created_at is timing authority.
 
 ## Completed milestones
-M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (run 35978969555). M3 dashboard/fleet static UX DONE. M4 popup/templates/cooldown static UX DONE. M5 rebuildable candidate DONE: exact candidate source `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`; run `35979821480` SUCCESS; NON-RELEASE artifact `10798948865`; Actions artifact digest `sha256:ca6ece70268ebf304cdab16260515911eeea45b6b67d44d981238c93bfdb251c`; inner candidate SHA in `candidate.sha256`.
+M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (run 35978969555). M3 dashboard/fleet static UX DONE. M4 popup/templates/cooldown static UX DONE. M5 rebuildable candidate DONE: exact candidate source `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`; run `35979821480` SUCCESS; NON-RELEASE artifact `10798948865`; Actions artifact digest `sha256:ca6ece70268ebf304cdab16260515911eeea45b6b67d44d981238c93bfdb251c`; inner candidate ZIP hash in `candidate.sha256`.
 
 ## M6 evidence
 - M6-C1 PASS: real Google Chrome loaded exact M5 candidate unpacked extension/dashboard. Actions run `35980470638` SUCCESS. This proves real Chromium extension/manifest/dashboard load only.
@@ -20,17 +20,17 @@ M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (
 - S9/S10 may be explicit NOT_OBSERVED only per checklist; observed FAIL reopens earlier milestone.
 
 ## M7 preparation while browser evidence is pending
-- `docs/RELEASE_NOTES_DRAFT.md` now contains an explicit M6 acceptance contract and a fail-closed final release checklist: authenticated candidate-bound result, S1–S8+S11 PASS, S9/S10 PASS-or-NOT_OBSERVED limitations, machine verifier, no unresolved observed FAIL, M0..M6 DONE, frozen final source SHA, release builder, ZIP integrity/file list/SHA-256, README/artifact identity, durable M7 evidence.
-- `scripts/build-final-release.sh` fail-closes on candidate/source-bound M6 evidence before repository verification and final ZIP/hash/content checks; NOT_OBSERVED limitations must appear in release notes.
-- Route State Contract run `35980587537` succeeded with live-evidence verifier self-test and release-builder syntax gate.
-- Obsolete `.github/workflows/mirror-baton-log.yml` was removed after the BATON layer was retired, reducing dead control-plane surface.
+- `scripts/verify-live-smoke-result.mjs` now validates environment provenance, required case evidence, S9/S10 explicit limitation handling, decision-summary consistency, and UTC decision time. The first hardened run exposed an outdated self-test fixture rather than a product failure; fixture was repaired. Exact-head Route State Contract run `35983716086` for `49a9da4fecdc9afa2fd99bc45fba311cebe3246b` completed SUCCESS.
+- A release-provenance flaw was found and corrected: the old final builder passed current repository HEAD as the expected M6 candidate SHA, which conflicts with legitimate docs/release-tooling commits after M5. `scripts/build-final-release.sh` now verifies live evidence against exact M6 candidate `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`, independently records release-repository SHA, and fail-closes if current `extension/` differs from the candidate tree. Any post-candidate extension change therefore forces a new candidate + fresh M6 instead of silently shipping untested product bytes.
+- `docs/RELEASE_NOTES_DRAFT.md` and README document the same candidate-tree identity rule and provenance requirements.
+- Obsolete `.github/workflows/mirror-baton-log.yml` was removed after the BATON layer was retired.
 - No final release ZIP or PROGRAM_COMPLETE before M6.
 
 ## Remaining path
 1. Change execution surface for M6-C2 to authenticated interactive Chrome+ChatGPT; do not blind-repeat the invalid headless dashboard/tab-query probe.
 2. Execute M6-C2 onward against exact candidate; fix/retest observed product failures.
 3. While M6 evidence is externally unavailable, continue independent M7 acceptance/documentation hardening without claiming M6/M7 PASS.
-4. M6 PASS -> freeze final source -> fail-closed M7 release builder -> durable PROGRAM_COMPLETE evidence.
+4. M6 PASS -> verify current `extension/` equals M6 candidate tree -> freeze release-repository SHA -> fail-closed M7 release builder -> durable PROGRAM_COMPLETE evidence.
 
 ## Scope
 ChatGPT-first. Reliability/simplification/recoverability before feature expansion. Claude/Gemini/Grok remain deferred.
