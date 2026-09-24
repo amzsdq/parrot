@@ -19,14 +19,15 @@ M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (
 
 ## M7 preparation while authenticated browser evidence is pending
 - Limitation-note regression is CI-confirmed in run `35993385261`; final-builder structural boundary regression is CI-confirmed in run `35993671018`.
-- Release preflight is now executable shared production/test logic. `scripts/verify-release-preflight.sh` rejects unstaged, staged, or untracked `extension/` changes and committed candidate-tree drift before authenticated live evidence is consulted. `scripts/build-final-release.sh` calls this same preflight, avoiding test/production divergence.
-- `scripts/test-release-preflight.sh` clones the repository into an isolated temporary worktree and exercises clean-pass plus four non-zero rejection cases: unstaged product change, staged product change, untracked product file, and committed candidate drift. No product `extension/` bytes were intentionally changed on main.
-- Route State Contract now syntax-checks and executes the new preflight regression. Integration head `fb279e945977a856cce89bd00e51907f1aa456a3`; run `35994081636` started and is still in progress at this checkpoint, so CI success is not yet claimed.
-- These release-tooling tests do not substitute for authenticated M6 browser evidence and do not close M6/M7.
+- Release preflight is executable shared production/test logic. `scripts/verify-release-preflight.sh` rejects unstaged, staged, or untracked `extension/` changes and committed candidate-tree drift; `scripts/build-final-release.sh` calls the same preflight.
+- `scripts/test-release-preflight.sh` exercises clean-pass plus unstaged, staged, untracked, and committed candidate-drift rejection in an isolated clone.
+- Route State Contract run `35994081636` FAILED specifically because Actions checkout used the default shallow `fetch-depth: 1`; the historical M5 candidate object `f51e4ba...` was absent, producing `fatal: bad object`, so the executable test could not compare against the candidate. This was an execution-environment defect, not a candidate mismatch.
+- Workflow repair commit `371e68caacc82754f522754fdb62ba8c7c51519b` sets checkout `fetch-depth: 0` so the exact historical candidate is available to the preflight regression. Await the resulting Route State Contract run and do not claim success until it completes.
+- No product `extension/` bytes were changed by this repair.
 
 ## Remaining path
-1. Resolve Route State Contract run `35994081636`; if the executable preflight test fails, inspect the failing case and repair it immediately.
-2. After CI success, harden the next final-release boundary with executable behavior rather than source-pattern-only assertions, prioritizing output/provenance cleanup or candidate-bound invocation behavior.
+1. Confirm the Route State Contract run for repair commit `371e68caacc82754f522754fdb62ba8c7c51519b`; if preflight still fails, inspect and repair the exact case.
+2. After executable preflight CI passes, replace the next source-pattern-only final-release boundary with executable behavior, prioritizing output/provenance cleanup or candidate-bound invocation.
 3. Obtain a supported authenticated interactive Chrome+ChatGPT surface and execute M6-C2 onward against exact candidate.
 4. After M6 PASS, re-verify candidate tree identity, freeze release-repository SHA, run the final builder, persist ZIP/file-list/hash/provenance evidence, and close M7 only when every criterion passes.
 
