@@ -15,21 +15,19 @@ M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (
 - M6-C1 PASS: real Google Chrome loaded exact M5 candidate unpacked extension/dashboard; run `35980470638` SUCCESS.
 - M6-C2 remains UNVERIFIED. Existing headless attempts reached an unauthenticated Cloudflare surface and cannot satisfy the authenticated interactive ChatGPT requirement. Do not repeat that path unchanged.
 - C2 onward require a supported authenticated interactive Chrome+ChatGPT surface. Checklist/result: `docs/LIVE_SMOKE_CHECKLIST.md`, `docs/LIVE_SMOKE_RESULT_TEMPLATE.md`.
-- `scripts/verify-live-smoke-result.mjs` requires exact candidate binding, authenticated-session structural provenance, real ChatGPT target URLs, ISO UTC timestamps, exactly one S1..S11 row, required evidence, decision consistency, and explicit NOT_OBSERVED limitations. Duplicate rows are rejected. Exact-head duplicate-row hardening run `35992843454` succeeded.
+- `scripts/verify-live-smoke-result.mjs` requires exact candidate binding, authenticated-session structural provenance, real ChatGPT target URLs, ISO UTC timestamps, exactly one S1..S11 row, required evidence, decision consistency, and explicit NOT_OBSERVED limitations. Duplicate rows are rejected.
 
 ## M7 preparation while authenticated browser evidence is pending
 - Limitation-note regression is CI-confirmed in run `35993385261`; final-builder structural boundary regression is CI-confirmed in run `35993671018`.
-- Release preflight is executable shared production/test logic. `scripts/verify-release-preflight.sh` rejects unstaged, staged, or untracked `extension/` changes and committed candidate-tree drift; `scripts/build-final-release.sh` calls the same preflight.
-- `scripts/test-release-preflight.sh` exercises clean-pass plus unstaged, staged, untracked, and committed candidate-drift rejection in an isolated clone.
-- Full-history checkout repair is confirmed: Route State Contract run `35994722114` SUCCESS, including `test-release-preflight.sh` and all existing contract tests.
-- Output cleanup is now shared executable production/test logic. `scripts/prepare-release-output.sh` validates `.zip` output and removes stale ZIP, checksum, file-list, and provenance before asserting those paths are absent. `build-final-release.sh` delegates to it.
-- `scripts/test-release-output-cleanup.sh` creates all four stale outputs, executes the production cleanup, verifies they are gone, and verifies non-ZIP output is rejected. Route State Contract was updated to syntax-check and execute this regression.
-- Integration head for the cleanup CI is `d0a04e83570aef7d9cce8b1bb1fb6e9ce006079a`; Route State Contract run `35995112380` is currently in progress. Do not claim this new boundary CI-confirmed until it succeeds.
+- Release preflight is executable shared production/test logic. `scripts/verify-release-preflight.sh` rejects unstaged, staged, untracked `extension/` changes and committed candidate-tree drift; `scripts/test-release-preflight.sh` exercises all four rejection modes. Full-history repair is confirmed by run `35994722114` SUCCESS.
+- Output cleanup is shared executable production/test logic. `scripts/prepare-release-output.sh` removes stale ZIP/checksum/file-list/provenance and rejects non-ZIP output. `scripts/test-release-output-cleanup.sh` executes those boundaries. Route State Contract run `35995112380` SUCCESS confirms this regression in CI.
+- Provenance is now shared executable production/test logic. `scripts/write-release-provenance.sh` writes exact candidate SHA, release-repository SHA, and SHA256 of the actual live-result file and fails closed when that evidence file is missing. `scripts/test-release-provenance.sh` executes the positive content assertions and missing-evidence rejection. `build-final-release.sh` delegates to the same writer, and the structural boundary test now checks delegation instead of grepping provenance field literals from the builder.
+- Route State Contract has been updated to syntax-check and execute the provenance regression. Integration head for that CI is `988d16a37f77319ddb67cb60fbab281d889bf6a6`; its workflow run had not appeared yet at checkpoint time, so do not claim provenance CI-confirmed until the run succeeds.
 - No product `extension/` bytes were changed by these release-hardening commits.
 
 ## Remaining path
-1. Confirm Route State Contract run `35995112380`; repair any exact failure and rerun if needed.
-2. If successful, replace the next source-pattern-only release boundary with executable behavior, prioritizing provenance contents/candidate-bound invocation rather than duplicating already executable preflight/cleanup coverage.
+1. Find and confirm the Route State Contract run for integration head `988d16a37f77319ddb67cb60fbab281d889bf6a6`; repair any exact failure if needed.
+2. If successful, replace the next source-pattern-only release boundary with executable behavior, prioritizing candidate-bound invocation/end-to-end builder orchestration without fabricating authenticated live evidence.
 3. Obtain a supported authenticated interactive Chrome+ChatGPT surface and execute M6-C2 onward against exact candidate.
 4. After M6 PASS, re-verify candidate tree identity, freeze release-repository SHA, run the final builder, persist ZIP/file-list/hash/provenance evidence, and close M7 only when every criterion passes.
 
