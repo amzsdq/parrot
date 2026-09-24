@@ -51,6 +51,16 @@ https://parrot.invalid/message/<sourceRunId>/<eventId>?to=<targetRouteId>&ref=<r
 4. 업데이트 시 확장 프로그램을 다시 로드합니다.
 5. 이미 열려 있던 ChatGPT 탭은 한 번 새로고침합니다.
 
+## Repository verification
+
+Repository source가 완전한 확장프로그램으로 재구축 가능한지 확인하려면 repository root에서 다음을 실행합니다.
+
+```text
+node scripts/verify-repo.mjs
+```
+
+검사는 manifest JSON parse, manifest/HTML이 참조하는 local file 존재 여부, repository에 있는 JavaScript의 `node --check` syntax를 확인합니다. 하나라도 빠지면 non-zero로 실패합니다. 현재 source-of-truth migration이 아직 끝나지 않았으므로 missing runtime source가 복구되기 전에는 이 gate가 실패하는 것이 정상입니다. Gate를 통과하기 전에는 repository를 완전한 rebuildable source로 인증하지 않습니다.
+
 ## Development principles
 
 - ChatGPT-first
@@ -63,4 +73,4 @@ https://parrot.invalid/message/<sourceRunId>/<eventId>?to=<targetRouteId>&ref=<r
 
 ## Source status
 
-GitHub source-of-truth migration is in progress. `extension/manifest.json` is now synchronized to the v0.8.6 artifact, but the full v0.8.6 package has not yet been committed/rebuilt solely from repository source. See `docs/DEVELOPMENT_CHECKPOINT.md`.
+GitHub source-of-truth migration is in progress. `extension/manifest.json` and several UI/support files are synchronized to the v0.8.6 artifact, but the full v0.8.6 package has not yet been committed/rebuilt solely from repository source. `background.js`, `content.js`, and `dashboard.js` are still missing, and `popup.js` byte-exact certification remains unresolved. See `docs/DEVELOPMENT_CHECKPOINT.md`.
