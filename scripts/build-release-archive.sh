@@ -13,7 +13,15 @@ esac
 [[ -d "$EXTENSION_DIR" ]] || { echo "ERROR: extension directory missing: $EXTENSION_DIR" >&2; exit 3; }
 [[ -f "$EXTENSION_DIR/manifest.json" ]] || { echo "ERROR: manifest missing: $EXTENSION_DIR/manifest.json" >&2; exit 4; }
 
-(cd "$EXTENSION_DIR" && zip -q -X -r "../$OUT" . -x '*.DS_Store')
+# build-final-release materializes extension/ under a temporary immutable candidate
+# snapshot. Resolve the caller's output path before entering that snapshot so the
+# archive is written to the requested release location, not beside the temp tree.
+case "$OUT" in
+  /*) OUT_ABS=$OUT ;;
+  *) OUT_ABS=$PWD/$OUT ;;
+esac
+
+(cd "$EXTENSION_DIR" && zip -q -X -r "$OUT_ABS" . -x '*.DS_Store')
 unzip -t "$OUT" >/dev/null
 unzip -Z1 "$OUT" | LC_ALL=C sort > "$OUT.files.txt"
 sha256sum "$OUT" > "$OUT.sha256"
