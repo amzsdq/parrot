@@ -439,6 +439,9 @@ function updateModeVisibility() {
   els.intervalOptions.hidden = response;
 }
 
+
+
+
 function providerForUrl(raw) {
   try {
     const host = new URL(raw).hostname.toLowerCase();
@@ -518,6 +521,7 @@ function indexToLetters(index) {
   }
   return out;
 }
+
 
 function routeKeyFor(target) {
   const explicit = String(target?.routeKey || '').trim();
