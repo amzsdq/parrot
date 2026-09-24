@@ -22,7 +22,9 @@ bash scripts/verify-release-limitations.sh "$GATE_OUTPUT_FILE" "$NOTES"
 rm -f "$GATE_OUTPUT_FILE"
 trap - EXIT
 
-node scripts/verify-repo.mjs
+# From this point onward, no failure may leave release-looking state from a
+# previous build. Clear it before repository verification, then keep the same
+# cleanup invariant across every later gate.
 bash scripts/prepare-release-output.sh "$OUT"
 cleanup_failed_release() {
   local rc=$?
@@ -30,6 +32,7 @@ cleanup_failed_release() {
   exit "$rc"
 }
 trap cleanup_failed_release ERR
+bash scripts/verify-release-repository.sh
 bash scripts/build-release-archive.sh "$OUT" "$VERSION" extension
 bash scripts/write-release-provenance.sh "$OUT" "$CANDIDATE_SHA" "$RELEASE_SHA" "$RESULT"
 echo "PASS: final release artifact built only after candidate-bound authenticated live evidence, candidate-tree identity, and limitation gates."
