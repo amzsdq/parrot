@@ -10,41 +10,46 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: f51e4ba53753dade3bd3f9a64e2b3c50ca05d691
-      - name: Record browser and candidate
+        with: { fetch-depth: 0 }
+      - name: Restore exact M5 candidate extension tree
         run: |
+          git checkout f51e4ba53753dade3bd3f9a64e2b3c50ca05d691 -- extension
+          test -z "$(git diff f51e4ba53753dade3bd3f9a64e2b3c50ca05d691 -- extension)"
           google-chrome --version
-          test "$(git rev-parse HEAD)" = "f51e4ba53753dade3bd3f9a64e2b3c50ca05d691"
-      - name: Launch and open candidate dashboard in real Chromium
+      - name: Launch candidate and probe real ChatGPT tab
         run: |
           set -euo pipefail
-          EXT="$GITHUB_WORKSPACE/extension"
-          PROFILE="$RUNNER_TEMP/parrot-chrome"
+          EXT="$GITHUB_WORKSPACE/extension"; PROFILE="$RUNNER_TEMP/parrot-chrome"
           EXT_ID=$(python3 - "$EXT" <<'PY'
           import hashlib,sys
           h=hashlib.sha256(sys.argv[1].encode()).hexdigest()[:32]
           print(''.join(chr(ord('a')+int(c,16)) for c in h))
           PY
           )
-          echo "candidate unpacked id=$EXT_ID"
-          google-chrome --headless=new --no-sandbox \
-            --user-data-dir="$PROFILE" \
-            --disable-extensions-except="$EXT" \
-            --load-extension="$EXT" \
-            --remote-debugging-port=9222 \
-            --no-first-run --no-default-browser-check \
+          google-chrome --headless=new --no-sandbox --user-data-dir="$PROFILE" \
+            --disable-extensions-except="$EXT" --load-extension="$EXT" \
+            --remote-debugging-port=9222 --no-first-run --no-default-browser-check \
             "chrome-extension://$EXT_ID/dashboard.html" >"$RUNNER_TEMP/chrome.log" 2>&1 &
           PID=$!
-          ready=0
-          for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:9222/json/version > "$RUNNER_TEMP/version.json"; then ready=1; break; fi
-            sleep 1
-          done
-          cat "$RUNNER_TEMP/chrome.log" || true
-          cat "$RUNNER_TEMP/version.json" || true
-          test "$ready" = 1
-          curl -fsS http://127.0.0.1:9222/json/list | tee "$RUNNER_TEMP/targets.json"
-          grep -F "chrome-extension://$EXT_ID/dashboard.html" "$RUNNER_TEMP/targets.json"
-          echo 'PASS: exact M5 candidate dashboard loaded as a real Chromium extension page.'
+          for i in {1..30}; do curl -fsS http://127.0.0.1:9222/json/version >/dev/null && break; sleep 1; done
+          curl -fsS http://127.0.0.1:9222/json/list > "$RUNNER_TEMP/targets.json"
+          DASH_WS=$(python3 - "$RUNNER_TEMP/targets.json" "$EXT_ID" <<'PY'
+          import json,sys
+          a=json.load(open(sys.argv[1])); u='chrome-extension://'+sys.argv[2]+'/dashboard.html'
+          print(next(x['webSocketDebuggerUrl'] for x in a if x.get('url')==u))
+          PY
+          )
+          echo 'PASS C1 probe: candidate dashboard target exists in real Chromium.'
+          curl -fsS -X PUT 'http://127.0.0.1:9222/json/new?https://chatgpt.com/' > "$RUNNER_TEMP/chat.json"
+          CHAT_WS=$(python3 - "$RUNNER_TEMP/chat.json" <<'PY'
+          import json,sys; print(json.load(open(sys.argv[1]))['webSocketDebuggerUrl'])
+          PY
+          )
+          sleep 8
+          echo '--- real ChatGPT page state ---'
+          node scripts/cdp-eval.mjs "$CHAT_WS" "({href:location.href,title:document.title,ready:document.readyState})"
+          echo '--- dashboard structural tab query ---'
+          node scripts/cdp-eval.mjs "$DASH_WS" "(async()=>{const tabs=await chrome.tabs.query({url:'https://chatgpt.com/*'});return tabs.map(t=>({id:t.id,url:t.url,active:t.active,discarded:t.discarded,frozen:t.frozen}));})()" | tee "$RUNNER_TEMP/dashboard-tabs.json"
+          grep -F 'chatgpt.com' "$RUNNER_TEMP/dashboard-tabs.json"
+          echo 'PASS: candidate Dashboard context can structurally enumerate a real ChatGPT tab without reading chat prose.'
           kill "$PID" || true
