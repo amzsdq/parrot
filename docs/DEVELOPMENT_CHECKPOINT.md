@@ -1,52 +1,52 @@
 # Parrot development checkpoint
 
 Status: CONTINUE
-Latest version: v0.8.4
-Artifact SHA-256: 25c516318d3e7ca365e3f0907c0eb9c82b29c99b3514df21288eb1338894c46b
+Latest version: v0.8.5
+Artifact SHA-256: d4ecc03f06f274a1ecba7cad98c465bb8031039637f5aafa32b014585f36927b
 
-## Completed in v0.8.4
+## Completed in v0.8.5
 
-- Added explicit Dashboard recovery controls for WAKE/MESSAGE routes fenced as `ambiguous`.
-- `재시도` is available only for ambiguous records and requires an explicit warning confirmation before dispatch.
-- The warning states that ChatGPT may already have accepted the original click and that retry can therefore duplicate the message.
-- Manual retry clears the ambiguity fence, records `manualRetryAt`, returns the route to pending, and dispatches once through the existing strong-receipt path.
-- `해결 처리` marks the record `resolved` without sending anything. This gives the operator a safe way to acknowledge an already-delivered/superseded route without risking duplication.
-- Background automatic queue processing continues to skip ambiguous routes. No blind redelivery was added.
-- Added distinct dashboard status dots for `ambiguous` and `resolved`.
-- No new Chrome permissions were added.
+- Closed the ambiguity-propagation loss window identified in v0.8.4.
+- Before a content script removes a locally ambiguous WAKE/MESSAGE delivery from its in-memory pending map, it now persists an `ambiguous` receipt into `chrome.storage.local` under a bounded receipt outbox.
+- The content script then attempts normal runtime messaging. On acknowledged background processing, the corresponding outbox receipt is removed.
+- If runtime messaging fails because the Manifest V3 service worker is temporarily unavailable/restarting, the receipt remains durable instead of being lost.
+- The background service worker reconciles the durable receipt outbox on browser startup and before every existing 30-second route-queue tick.
+- Reconciliation marks the existing durable route record `ambiguous`; it does not redeliver the WAKE/MESSAGE.
+- Receipt timestamps preserve the content-script observation time when available.
+- The outbox is bounded to the latest 100 ambiguity receipts.
+- No new Chrome permissions were added; the existing `storage` permission is reused.
 
 ## Reference / rationale
 
-- Carbon data-table guidance recommends row-specific actions as inline actions/overflow actions; with two actions, keeping them visible inline reduces an extra click.
-- Carbon modal guidance and Atlassian warning guidance recommend explicit confirmation when an action can have meaningful consequences and require the warning to explain what will happen.
-- Here, duplicate WAKE/MESSAGE delivery is the relevant consequence. Therefore retry is deliberate and confirmed, while the non-sending resolution path is offered as the safe alternative.
+- Chrome's extension architecture separates content scripts from the extension service worker and uses message passing between those contexts. A runtime message can therefore be a transient coordination path rather than the sole durable record.
+- Chrome documents `storage.local` as persistent local extension storage and notes that it is exposed to content scripts by default. This makes it suitable for a small durable receipt outbox shared between the content script and service worker.
+- The existing background alarm is reused as the bounded reconciliation trigger. Recovery changes state only (`pending` → `ambiguous`) and never blindly redelivers, preserving the duplicate-delivery safety invariant.
 - References:
-  - https://carbondesignsystem.com/components/data-table/usage/
-  - https://carbondesignsystem.com/components/modal/usage/
-  - https://atlassian.design/content/writing-guidelines/writing-a-warning-message
+  - https://developer.chrome.com/docs/extensions/reference/api/storage
+  - https://developer.chrome.com/docs/extensions/develop/concepts/messaging
 
 ## Verification
 
 - `node --check`: background.js, content.js, dashboard.js, popup.js, chatgpt-adapter.js PASS
 - manifest JSON parse PASS
 - ZIP integrity PASS
-- manifest version = 0.8.4
-- Static route-recovery verification PASS: ambiguous-only action gate, explicit confirm before retry, manual retry path records `manualRetryAt`, resolve path performs no dispatch.
+- manifest version = 0.8.5
+- Static recovery-path verification PASS: persist receipt before local deletion; content-script flush removes only after acknowledged background response; background alarm reconciles outbox before route redispatch; reconciliation performs no dispatch.
 
 ## Existing baseline
 
 - Multi-worker dashboard supports A…Z, AA… identities, cross-tab control, 10/25/50 pagination, and discarded/frozen structural states.
 - Normal repeat-send and WAKE/MESSAGE delivery use strong structural receipts.
-- Ambiguous WAKE/MESSAGE delivery is fenced from automatic retry.
+- Ambiguous WAKE/MESSAGE delivery is fenced from automatic retry and has explicit Dashboard retry/resolve controls.
 - Chat semantic content remains outside Parrot fleet monitoring.
 
 ## Remaining risks / next high-value work
 
 1. Real ChatGPT browser regression test remains necessary: local DOM/count smoke tests cannot prove future ChatGPT selector stability.
-2. Durable ambiguity propagation can still be lost if background messaging is unavailable exactly when the content script tries to report `PARROT_ROUTE_AMBIGUOUS`. Add a bounded recovery mechanism that does not blindly redeliver.
-3. Exercise discarded/frozen recovery with real Chrome memory-saver behavior before adding automatic recovery.
-4. Commit the extension source itself to `amzsdq/parrot` so GitHub becomes a fully reconstructable source of truth rather than only README/checkpoint state.
-5. After source-of-truth migration, add regression fixtures for route state transitions (`pending → ambiguous → manual retry/resolved → delivered`).
+2. Commit the extension source itself to `amzsdq/parrot` so GitHub becomes a fully reconstructable source of truth rather than only README/checkpoint state.
+3. After source-of-truth migration, add regression fixtures for route state transitions (`pending → ambiguous → manual retry/resolved → delivered`) and durable receipt reconciliation.
+4. Exercise discarded/frozen recovery with real Chrome memory-saver behavior before adding automatic recovery.
+5. Review concurrent content-script writes to the bounded receipt outbox if future routing becomes highly parallel; current one-route-at-a-time delivery substantially limits this race surface.
 
 ## Scope
 
