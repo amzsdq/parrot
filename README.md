@@ -52,11 +52,15 @@ node scripts/test-dashboard-fleet.mjs
 node scripts/test-popup-ux-contract.mjs
 node scripts/test-chatgpt-adapter-structure.mjs
 node scripts/test-cooldown-storage-contract.mjs
+node scripts/test-live-smoke-verifier.mjs
 node scripts/validate-contracts.mjs
 node scripts/validate-v087-integration.mjs
 node scripts/verify-repo.mjs
 ```
 GitHub Actions `Route State Contract` runs these gates and builds a versioned NON-RELEASE candidate evidence artifact after they pass. The candidate build uses deterministic `zip -X`, archive integrity testing, sorted file listing, SHA-256 generation, and manifest-version verification.
+
+## Final-release provenance
+M6 is bound to exact candidate source `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`. Documentation and release-tooling may advance after that candidate, but the shipped `extension/` tree must remain unchanged from the M6 candidate. `scripts/build-final-release.sh <live-result> <candidate-sha>` verifies the live result against that candidate and fails closed if the current extension tree differs. Any post-candidate extension change requires a new candidate and fresh M6 validation. The final build emits candidate SHA and release-repository SHA provenance alongside the ZIP.
 
 ## Reconstruction provenance
 Exact later v0.8.6 runtime bytes were not recovered, so v0.8.7 is a deliberate reconstruction from recovered behavior plus verified contracts, not a byte-exact v0.8.6 claim. Recovered popup numeric clamp/default regressions were repaired and guarded.
