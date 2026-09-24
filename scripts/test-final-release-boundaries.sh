@@ -16,17 +16,18 @@ require_pattern() {
 }
 
 # Detailed behavior of shared gates is executable-tested separately.
-# These structural checks ensure the production builder still delegates to them.
+# These structural checks only ensure the production builder still delegates.
 require_pattern "$BUILDER" 'shared release preflight invocation' 'verify-release-preflight\.sh "\$CANDIDATE_SHA"'
 require_pattern "$PREFLIGHT" 'unstaged extension dirty-tree' 'git diff --quiet -- extension'
 require_pattern "$PREFLIGHT" 'staged extension dirty-tree' 'git diff --cached --quiet -- extension'
 require_pattern "$PREFLIGHT" 'untracked extension dirty-tree' 'git ls-files --others --exclude-standard -- extension'
 require_pattern "$PREFLIGHT" 'candidate-tree identity' 'git diff --quiet "\$CANDIDATE_SHA" -- extension'
+require_pattern "$BUILDER" 'immutable candidate materialization' 'materialize-release-candidate\.sh "\$CANDIDATE_SHA" "\$CANDIDATE_SNAPSHOT/tree"'
 require_pattern "$BUILDER" 'shared candidate-bound live evidence invocation' 'verify-candidate-live-evidence\.sh "\$RESULT_SNAPSHOT" "\$CANDIDATE_SHA"'
 require_pattern "$BUILDER" 'release limitation gate' 'verify-release-limitations\.sh "\$GATE_OUTPUT_FILE" "\$NOTES"'
 require_pattern "$BUILDER" 'shared output cleanup invocation' 'prepare-release-output\.sh "\$OUT"'
 require_pattern "$CLEANUP" 'stale artifact cleanup' 'rm -f -- "\$OUT" "\$OUT\.sha256" "\$OUT\.files\.txt" "\$PROVENANCE"'
-require_pattern "$BUILDER" 'shared archive integrity invocation' 'build-release-archive\.sh "\$OUT" "\$VERSION" extension'
+require_pattern "$BUILDER" 'shared archive integrity invocation' 'build-release-archive\.sh "\$OUT" "\$VERSION" "\$CANDIDATE_SNAPSHOT/tree/extension"'
 require_pattern "$BUILDER" 'shared provenance writer invocation' 'write-release-provenance\.sh "\$OUT" "\$CANDIDATE_SHA" "\$RELEASE_SHA" "\$RESULT_SNAPSHOT"'
 
-echo 'PASS: final release builder delegates shared preflight/live-evidence/output/archive/provenance gates with one frozen live-evidence snapshot.'
+echo 'PASS: final release builder delegates shared gates and archives only the immutable candidate snapshot.'
