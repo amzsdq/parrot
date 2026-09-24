@@ -1,0 +1,31 @@
+name: Route State Contract
+
+on:
+  push:
+    paths:
+      - 'extension/route-state.js'
+      - 'tests/route-state-contract.json'
+      - 'scripts/test-route-state.mjs'
+      - '.github/workflows/route-state-contract.yml'
+  pull_request:
+    paths:
+      - 'extension/route-state.js'
+      - 'tests/route-state-contract.json'
+      - 'scripts/test-route-state.mjs'
+      - '.github/workflows/route-state-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  route-state:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check extension/route-state.js
+      - run: node --check scripts/test-route-state.mjs
+      - run: node scripts/test-route-state.mjs
