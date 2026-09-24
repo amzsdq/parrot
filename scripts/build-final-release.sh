@@ -24,10 +24,6 @@ trap - EXIT
 
 node scripts/verify-repo.mjs
 bash scripts/prepare-release-output.sh "$OUT"
-(cd extension && zip -X -r "../$OUT" . -x '*.DS_Store')
-unzip -t "$OUT"
-unzip -Z1 "$OUT" | LC_ALL=C sort > "$OUT.files.txt"
-sha256sum "$OUT" | tee "$OUT.sha256"
-unzip -p "$OUT" manifest.json | grep -F "\"version\": \"$VERSION\""
+bash scripts/build-release-archive.sh "$OUT" "$VERSION" extension
 bash scripts/write-release-provenance.sh "$OUT" "$CANDIDATE_SHA" "$RELEASE_SHA" "$RESULT"
 echo "PASS: final release artifact built only after candidate-bound authenticated live evidence, candidate-tree identity, and limitation gates."
