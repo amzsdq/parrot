@@ -30,6 +30,7 @@ jobs:
       - run: node --check extension/content.js
       - run: node --check extension/dashboard.js
       - run: node --check scripts/verify-live-smoke-result.mjs
+      - run: node --check scripts/verify-publication-record.mjs
       - run: bash -n scripts/*.sh
       - run: node scripts/test-route-state.mjs
       - run: node scripts/test-route-queue.mjs
@@ -44,6 +45,7 @@ jobs:
       - run: node scripts/test-chatgpt-adapter-structure.mjs
       - run: node scripts/test-cooldown-storage-contract.mjs
       - run: node scripts/test-live-smoke-verifier.mjs
+      - run: node scripts/test-publication-record-verifier.mjs
       - run: bash scripts/test-release-candidate-snapshot.sh
       - run: bash scripts/test-release-tooling-snapshot.sh
       - run: bash scripts/test-release-build-lock.sh
