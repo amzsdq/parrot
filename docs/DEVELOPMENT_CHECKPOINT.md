@@ -1,5 +1,16 @@
 # Parrot development checkpoint
 
+# Relay handoff state model
+
+Immediate continuation is now split from historical logging:
+
+- `docs/BATON.md` = latest-only execution baton. Read this first on wake.
+- `docs/DEVELOPMENT_LOG.md` = append-only history of full baton snapshots.
+- Every handoff writes the same next-baton snapshot to BOTH places: replace BATON with the newest snapshot, append that snapshot to DEVELOPMENT_LOG.
+- Each baton carries `EXPECTED_ACTIVE_MINUTES` and `NEXT_WAKE_DELAY_MINUTES`.
+- Work packages must be scoped to <=14 expected active minutes. Short test/observation packages use their real shorter estimate; for example a 3-minute package sets `NEXT_WAKE_DELAY_MINUTES=3`.
+- 14 minutes is a maximum package-sizing target, not a padding requirement or stop-success condition.
+
 Status: CONTINUE
 Latest version: v0.8.6
 Artifact SHA-256: d4ecc03f06f274a1ecba7cad98c465bb8031039637f5aafa32b014585f36927b (v0.8.5 historical baseline; v0.8.6 artifact is the current conversation artifact)
