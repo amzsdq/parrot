@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "앵무새",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "ChatGPT 멀티 워커를 제어하고 durable receipt·COMPLETE·WAKE·MESSAGE 라우팅을 관리하는 로컬 앵무새 확장프로그램",
   "permissions": [
     "storage",
@@ -12,8 +12,7 @@
     "https://chatgpt.com/*"
   ],
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
@@ -21,6 +20,7 @@
         "https://chatgpt.com/*"
       ],
       "js": [
+        "route-state.js",
         "chatgpt-adapter.js",
         "content.js"
       ],
