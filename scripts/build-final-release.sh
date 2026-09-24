@@ -25,14 +25,10 @@ cleanup_snapshots() {
 trap cleanup_snapshots EXIT
 
 # Freeze committed release tooling and notes before trusting any downstream
-# helper. The frozen verifier proves the mutable worktree matched RELEASE_SHA
-# at this boundary; every later helper executes only from this snapshot.
-if [[ ${PARROT_TEST_USE_WORKTREE_TOOLING:-0} == 1 ]]; then
-  TOOL_ROOT=.
-else
-  git archive "$RELEASE_SHA" -- scripts "$NOTES" | tar -x -C "$TOOLING_SNAPSHOT"
-  TOOL_ROOT=$TOOLING_SNAPSHOT
-fi
+# helper. No caller-controlled bypass exists: every delegated production gate
+# executes from RELEASE_SHA bytes.
+git archive "$RELEASE_SHA" -- scripts "$NOTES" | tar -x -C "$TOOLING_SNAPSHOT"
+TOOL_ROOT=$TOOLING_SNAPSHOT
 run_tool() { bash "$TOOL_ROOT/scripts/$1" "${@:2}"; }
 
 run_tool prepare-release-output.sh "$OUT"
