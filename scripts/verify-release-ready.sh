@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OUT=${1:?usage: verify-release-ready.sh <release.zip> <expected-release-repo-sha>}
+OUT=${1:?usage: verify-release-ready.sh <release.zip> <expected-release-repo-sha> <expected-artifact-sha256>}
 EXPECTED_RELEASE_SHA=${2:?missing trusted expected release repository sha}
+EXPECTED_ARTIFACT_SHA=${3:?missing trusted expected release artifact sha256}
 READY="$OUT.ready"
 EVIDENCE="$OUT.live-result.txt"
 EXPECTED_CANDIDATE=f51e4ba53753dade3bd3f9a64e2b3c50ca05d691
 SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 
 [[ "$EXPECTED_RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo 'FAIL: trusted expected release repository sha is not a full commit identity' >&2; exit 1; }
+[[ "$EXPECTED_ARTIFACT_SHA" =~ ^[0-9a-f]{64}$ ]] || { echo 'FAIL: trusted expected release artifact sha256 is not a full digest identity' >&2; exit 1; }
 
 for path in "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt" "$EVIDENCE" "$READY"; do
   [[ -f "$path" ]] || { echo "FAIL: publish-ready component missing: $path" >&2; exit 1; }
@@ -38,6 +40,9 @@ FILE_LIST_SHA=$(sha256sum "$OUT.files.txt" | awk '{print $1}')
 PROVENANCE_SHA=$(sha256sum "$OUT.provenance.txt" | awk '{print $1}')
 EVIDENCE_SHA=$(sha256sum "$EVIDENCE" | awk '{print $1}')
 
+# Repository identity alone does not authenticate bundle bytes: both identities
+# must come from the trusted publication record/channel.
+[[ "$ARTIFACT_SHA" == "$EXPECTED_ARTIFACT_SHA" ]] || { echo 'FAIL: release artifact does not match trusted expected artifact digest' >&2; exit 1; }
 [[ "$(read_one artifact_sha256)" == "$ARTIFACT_SHA" ]] || { echo 'FAIL: ready marker artifact hash mismatch' >&2; exit 1; }
 [[ "$(read_one checksum_sha256)" == "$CHECKSUM_SHA" ]] || { echo 'FAIL: ready marker checksum sidecar hash mismatch' >&2; exit 1; }
 [[ "$(read_one file_list_sha256)" == "$FILE_LIST_SHA" ]] || { echo 'FAIL: ready marker file-list hash mismatch' >&2; exit 1; }
@@ -65,9 +70,8 @@ LIVE_RESULT_SHA=$(read_provenance_one live_result_sha256)
 [[ "$LIVE_RESULT_SHA" == "$EVIDENCE_SHA" ]] || { echo 'FAIL: provenance live-result identity does not match durable evidence bytes' >&2; exit 1; }
 [[ "$PROVENANCE_ARTIFACT_SHA" == "$ARTIFACT_SHA" ]] || { echo 'FAIL: provenance is not bound to artifact' >&2; exit 1; }
 
-# Durable evidence must remain semantically valid, not merely hash-consistent.
 bash "$SCRIPT_DIR/verify-candidate-live-evidence.sh" "$EVIDENCE" "$EXPECTED_CANDIDATE" >/dev/null || { echo 'FAIL: durable live evidence no longer passes candidate-bound verification' >&2; exit 1; }
 
 trap - EXIT
 rm -f -- "$EXPECTED_LIST"
-echo "PASS: publish-ready release is bound to trusted release commit $EXPECTED_RELEASE_SHA and durable live evidence remains mutually, semantically, and candidate-identity bound."
+echo "PASS: publish-ready release matches trusted release commit $EXPECTED_RELEASE_SHA and artifact digest $EXPECTED_ARTIFACT_SHA; durable live evidence remains mutually, semantically, and candidate-identity bound."
