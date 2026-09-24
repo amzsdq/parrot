@@ -22,8 +22,7 @@ jobs:
           EXT="$GITHUB_WORKSPACE/extension"; PROFILE="$RUNNER_TEMP/parrot-chrome"
           EXT_ID=$(python3 - "$EXT" <<'PY'
           import hashlib,sys
-          h=hashlib.sha256(sys.argv[1].encode()).hexdigest()[:32]
-          print(''.join(chr(ord('a')+int(c,16)) for c in h))
+          h=hashlib.sha256(sys.argv[1].encode()).hexdigest()[:32]; print(''.join(chr(ord('a')+int(c,16)) for c in h))
           PY
           )
           echo "$EXT_ID" > "$RUNNER_TEMP/ext-id"
@@ -32,33 +31,31 @@ jobs:
           for i in {1..30}; do curl -fsS http://127.0.0.1:9222/json/version >/dev/null && break; sleep 1; done
           curl -fsS http://127.0.0.1:9222/json/list > "$RUNNER_TEMP/targets.json"
           grep -F "chrome-extension://$EXT_ID/dashboard.html" "$RUNNER_TEMP/targets.json"
-      - name: Open real ChatGPT page target
+      - name: Open and evaluate real ChatGPT page
         run: |
-          curl -fsS -X PUT 'http://127.0.0.1:9222/json/new?https://chatgpt.com/' | tee "$RUNNER_TEMP/chat.json"
-          python3 - "$RUNNER_TEMP/chat.json" <<'PY'
-          import json,sys
-          j=json.load(open(sys.argv[1])); assert j.get('webSocketDebuggerUrl'); print(j.get('url'))
-          PY
-      - name: Evaluate real ChatGPT page
-        run: |
+          curl -fsS -X PUT 'http://127.0.0.1:9222/json/new?https://chatgpt.com/' > "$RUNNER_TEMP/chat.json"
           CHAT_WS=$(python3 - "$RUNNER_TEMP/chat.json" <<'PY'
           import json,sys; print(json.load(open(sys.argv[1]))['webSocketDebuggerUrl'])
           PY
           )
           sleep 8
           node scripts/cdp-eval.mjs "$CHAT_WS" "({href:location.href,title:document.title,ready:document.readyState})"
-      - name: Query ChatGPT tab structurally from candidate Dashboard
+      - name: Verify Dashboard extension API context
         run: |
-          EXT_ID=$(cat "$RUNNER_TEMP/ext-id")
-          curl -fsS http://127.0.0.1:9222/json/list > "$RUNNER_TEMP/targets.json"
+          EXT_ID=$(cat "$RUNNER_TEMP/ext-id"); curl -fsS http://127.0.0.1:9222/json/list > "$RUNNER_TEMP/targets.json"
           DASH_WS=$(python3 - "$RUNNER_TEMP/targets.json" "$EXT_ID" <<'PY'
           import json,sys
           a=json.load(open(sys.argv[1])); u='chrome-extension://'+sys.argv[2]+'/dashboard.html'; print(next(x['webSocketDebuggerUrl'] for x in a if x.get('url')==u))
           PY
           )
-          node scripts/cdp-eval.mjs "$DASH_WS" "(async()=>{const tabs=await chrome.tabs.query({url:'https://chatgpt.com/*'});return tabs.map(t=>({id:t.id,url:t.url,active:t.active,discarded:t.discarded,frozen:t.frozen}));})()" | tee "$RUNNER_TEMP/dashboard-tabs.json"
+          echo "$DASH_WS" > "$RUNNER_TEMP/dashboard-ws"
+          node scripts/cdp-eval.mjs "$DASH_WS" "({href:location.href,hasChrome:typeof chrome!=='undefined',hasTabs:typeof chrome?.tabs?.query==='function'})"
+      - name: Query real ChatGPT tab from candidate Dashboard
+        run: |
+          DASH_WS=$(cat "$RUNNER_TEMP/dashboard-ws")
+          node scripts/cdp-eval.mjs "$DASH_WS" "(async()=>{const tabs=await chrome.tabs.query({});return tabs.filter(t=>String(t.url||'').startsWith('https://chatgpt.com/')).map(t=>({id:t.id,url:t.url,active:t.active,discarded:t.discarded}));})()" | tee "$RUNNER_TEMP/dashboard-tabs.json"
           grep -F 'chatgpt.com' "$RUNNER_TEMP/dashboard-tabs.json"
-          echo 'PASS: candidate Dashboard structurally enumerates a real ChatGPT tab without reading chat prose.'
+          echo 'PASS: candidate Dashboard structurally enumerates a real ChatGPT tab without chat-prose access.'
       - name: Cleanup
         if: always()
         run: kill "$(cat "$RUNNER_TEMP/chrome.pid")" 2>/dev/null || true
