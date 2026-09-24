@@ -21,13 +21,15 @@ M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (
 - Limitation-note regression is CI-confirmed in run `35993385261`; final-builder structural boundary regression is CI-confirmed in run `35993671018`.
 - Release preflight is executable shared production/test logic. `scripts/verify-release-preflight.sh` rejects unstaged, staged, or untracked `extension/` changes and committed candidate-tree drift; `scripts/build-final-release.sh` calls the same preflight.
 - `scripts/test-release-preflight.sh` exercises clean-pass plus unstaged, staged, untracked, and committed candidate-drift rejection in an isolated clone.
-- Route State Contract run `35994081636` FAILED specifically because Actions checkout used the default shallow `fetch-depth: 1`; the historical M5 candidate object `f51e4ba...` was absent, producing `fatal: bad object`, so the executable test could not compare against the candidate. This was an execution-environment defect, not a candidate mismatch.
-- Workflow repair commit `371e68caacc82754f522754fdb62ba8c7c51519b` sets checkout `fetch-depth: 0` so the exact historical candidate is available to the preflight regression. Await the resulting Route State Contract run and do not claim success until it completes.
-- No product `extension/` bytes were changed by this repair.
+- Full-history checkout repair is confirmed: Route State Contract run `35994722114` SUCCESS, including `test-release-preflight.sh` and all existing contract tests.
+- Output cleanup is now shared executable production/test logic. `scripts/prepare-release-output.sh` validates `.zip` output and removes stale ZIP, checksum, file-list, and provenance before asserting those paths are absent. `build-final-release.sh` delegates to it.
+- `scripts/test-release-output-cleanup.sh` creates all four stale outputs, executes the production cleanup, verifies they are gone, and verifies non-ZIP output is rejected. Route State Contract was updated to syntax-check and execute this regression.
+- Integration head for the cleanup CI is `d0a04e83570aef7d9cce8b1bb1fb6e9ce006079a`; Route State Contract run `35995112380` is currently in progress. Do not claim this new boundary CI-confirmed until it succeeds.
+- No product `extension/` bytes were changed by these release-hardening commits.
 
 ## Remaining path
-1. Confirm the Route State Contract run for repair commit `371e68caacc82754f522754fdb62ba8c7c51519b`; if preflight still fails, inspect and repair the exact case.
-2. After executable preflight CI passes, replace the next source-pattern-only final-release boundary with executable behavior, prioritizing output/provenance cleanup or candidate-bound invocation.
+1. Confirm Route State Contract run `35995112380`; repair any exact failure and rerun if needed.
+2. If successful, replace the next source-pattern-only release boundary with executable behavior, prioritizing provenance contents/candidate-bound invocation rather than duplicating already executable preflight/cleanup coverage.
 3. Obtain a supported authenticated interactive Chrome+ChatGPT surface and execute M6-C2 onward against exact candidate.
 4. After M6 PASS, re-verify candidate tree identity, freeze release-repository SHA, run the final builder, persist ZIP/file-list/hash/provenance evidence, and close M7 only when every criterion passes.
 
