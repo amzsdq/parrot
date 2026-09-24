@@ -1,26 +1,24 @@
 # Parrot / 앵무새
 
-ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 처리하는 로컬 Chrome Extension입니다.
-
-현재 실제 provider adapter는 ChatGPT만 지원합니다. Claude / Gemini / Grok은 adapter boundary만 유지하고 아직 구현하지 않습니다.
+ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 처리하는 로컬 Chrome Extension입니다. 현재 실제 provider adapter는 ChatGPT만 지원합니다. Claude / Gemini / Grok은 adapter boundary만 유지하며 아직 구현하지 않습니다.
 
 ## Current version
 
-`v0.8.7` reconstruction in progress
+`v0.8.7` reconstruction in progress. Static/repository gates are not a release claim; real Chromium + ChatGPT smoke remains required before release.
 
 ## Current capabilities
 
 - Worker identity: `A`, `B`, `C` … `Z`, `AA` …; fixed five-worker limit 없음.
-- Dashboard는 활성 ChatGPT 탭에 종속되지 않는 extension control plane입니다.
-- 검색/상태 필터와 10/25/50 pagination을 지원합니다.
-- `discarded` / `frozen` 탭을 일반 연결 실패와 구분합니다.
-- Live dashboard는 채팅 본문을 의미 분석하지 않고 구조적 상태만 사용합니다.
-- 일반 반복 전송과 WAKE/MESSAGE delivery는 click 반환이 아니라 새 user-message DOM 또는 assistant generation 시작을 strong receipt로 사용합니다.
-- receipt가 확인되지 않은 route는 `ambiguous`로 fence하고 자동 재전송하지 않습니다.
-- ambiguity receipt는 background messaging 전에 bounded `chrome.storage.local` outbox에 기록됩니다.
-- `delivered`와 수동 `resolved` route는 terminal history이며 active records는 history cap 때문에 제거하지 않습니다.
-- cooldown 감지는 assistant/user 메시지 본문을 읽지 않고 구조적 error attribute/selectors만 사용합니다. 반복 runner와 routed send 모두 persisted cooldown deadline을 존중합니다.
-- cooldown ladder는 rate-limit 10→20→40→60분, transient 2→5→10→20분이며 `cooldownEnabled=false`인 target runner는 이를 적용하지 않습니다.
+- Dashboard is an extension control plane independent of the active ChatGPT tab. It can search/filter/page workers and directly Start/Stop an exact matching open ChatGPT worker without activating that tab; `열기` remains an explicit separate action.
+- Dashboard fleet model supports 10/25/50 pagination and structural attention filtering; discarded/frozen tabs are distinct structural states.
+- Live status never semantically reads chat prose.
+- Normal repeat sends and WAKE/MESSAGE delivery require a strong receipt: new user-message DOM count or assistant generation start, not merely click/composer change.
+- Unconfirmed routed sends become durable `ambiguous`, are fenced from automatic resend, and expose explicit Dashboard Retry/Resolve actions.
+- Ambiguity receipt is persisted to bounded `chrome.storage.local` outbox before background notification.
+- `delivered` and manually `resolved` routes are terminal history.
+- Structural cooldown classification never reads assistant/user prose. Persisted cooldown deadlines gate both repeat runners and routed sends.
+- Cooldown ladder: rate-limit 10→20→40→60 minutes; transient 2→5→10→20 minutes. Targets may disable cooldown handling.
+- Runner ownership is fenced by a token registry: startup/reload, storage reconciliation, explicit `PARROT_START`, and mode transitions cannot retain two effective runners for one target.
 
 ## Protocol
 
@@ -35,11 +33,11 @@ MESSAGE
 https://parrot.invalid/message/<sourceRunId>/<eventId>?to=<targetRouteId>&ref=<reference>
 ```
 
-`MESSAGE`의 `ref`는 GitHub URL, 문서 ID 등 수신 Worker가 직접 확인할 참조입니다. Parrot는 참조 대상의 본문을 읽지 않습니다.
+`MESSAGE.ref` is an explicit reference such as a GitHub URL or document ID. Parrot does not fetch or semantically read surrounding chat prose.
 
 ## Repository verification
 
-Repository root에서 다음 gates를 실행합니다.
+Run from repository root:
 
 ```text
 node scripts/test-route-state.mjs
@@ -47,6 +45,11 @@ node scripts/test-route-queue.mjs
 node scripts/test-signal-protocol.mjs
 node scripts/test-prompt-compose.mjs
 node scripts/test-repeat-policy.mjs
+node scripts/test-runner-policy.mjs
+node scripts/test-runner-registry.mjs
+node scripts/test-dashboard-controls.mjs
+node scripts/test-dashboard-fleet.mjs
+node scripts/test-popup-ux-contract.mjs
 node scripts/test-chatgpt-adapter-structure.mjs
 node scripts/test-cooldown-storage-contract.mjs
 node scripts/validate-contracts.mjs
@@ -54,28 +57,30 @@ node scripts/validate-v087-integration.mjs
 node scripts/verify-repo.mjs
 ```
 
-GitHub Actions의 `Route State Contract` workflow도 위 production integration/rebuildability gates를 실행합니다. Contract가 정상이라는 사실과 production runtime이 통과한다는 사실은 구분합니다.
+GitHub Actions `Route State Contract` runs these production integration/rebuildability gates. Contract/static success and real-browser success are intentionally separate claims.
 
 ## v0.8.7 reconstruction status
 
-Exact v0.8.6 `background.js`, `content.js`, `dashboard.js` bytes는 확보되지 않았으므로 해당 runtime을 v0.8.6 byte-exact라고 주장하지 않습니다. 대신 recovered v0.8.0 behavior와 검증된 later contracts를 근거로 v0.8.7 runtime을 재구성 중입니다.
+Exact v0.8.6 `background.js`, `content.js`, `dashboard.js` bytes were not recovered, so this runtime is not claimed byte-exact v0.8.6. The repository reconstructs v0.8.7 from recovered behavior plus later verified contracts.
 
-현재 repository에는 다음 production slice가 있습니다.
+Current production slice:
+- classic MV3 background with route/signal/repeat primitives;
+- pending-only routed delivery plus structural cooldown backpressure;
+- durable ambiguity outbox and explicit Retry/Resolve;
+- strong structural send receipt in `content.js`;
+- response/interval runner lifecycle with exact-URL auto-arm, delay/sendImmediately policy, and token-fenced single-runner registry;
+- dashboard direct exact-target Start/Stop/Open, fleet search/filter/pagination, actionable structural activity labels, and ambiguity actions;
+- compact popup with overlay editors for completion/onboarding/WAKE/MESSAGE/advanced settings.
 
-- classic MV3 `background.js`가 route/signal/repeat policy primitives를 로드합니다.
-- periodic routing은 pending-only state guard와 target cooldown backpressure를 사용합니다.
-- ambiguity reconciliation은 state-only이며 manual Retry/Resolve가 별도 message contract입니다.
-- `content.js`는 click 전 user-message count를 잡고 count 증가 또는 generation start만 strong receipt로 인정합니다.
-- strong receipt timeout은 ambiguous이며, 구조 receipt를 local outbox에 먼저 저장한 뒤 background에 알립니다.
-- response/interval runner는 공통 prompt composition, stop policy, structural cooldown state를 사용합니다.
-- manifest는 v0.8.7/classic worker/content load order로 전환했습니다.
-- dashboard controller는 worker pagination/search/filter와 ambiguous Retry/Resolve를 제공합니다.
-
-주의: repository gate 통과는 실제 ChatGPT 브라우저 smoke test를 대체하지 않습니다. 실제 selector/send/receipt/cooldown 동작과 완성된 v0.8.7 ZIP은 별도 검증 대상입니다.
+Real browser gate: `docs/LIVE_SMOKE_CHECKLIST.md`. Repository/static gates never substitute for it.
 
 ## popup.js provenance
 
-Recovered target의 네 numeric clamp/default 회귀는 정확히 수리됐습니다. 현재 repository `extension/popup.js`는 Git blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`로 recovered exact target과 일치하며, CI의 cooldown/storage contract가 delay ≥ 0, interval ≥ 1, maxRepeats ≥ 0, runtimeMin ≥ 0 clamp 존재를 회귀 검사합니다.
+Recovered numeric clamp/default regressions were repaired. CI checks delay ≥ 0, interval ≥ 1, maxRepeats ≥ 0, runtimeMin ≥ 0 plus cooldown/storage contracts.
+
+## Development state
+
+`docs/MILESTONES.md` is the single durable work-supply/progress authority. There is no active BATON layer. `docs/DEVELOPMENT_CHECKPOINT.md` is durable summary/evidence and `docs/DEVELOPMENT_LOG.md` is historical evidence only.
 
 ## Development principles
 
@@ -83,8 +88,6 @@ Recovered target의 네 numeric clamp/default 회귀는 정확히 수리됐습�
 - dashboard-first management
 - compact popup, no default vertical scrolling
 - reliability / simplification / regression fixes before feature growth
-- COMPLETE via `parrot.invalid` runId exact link
+- COMPLETE via exact `parrot.invalid` runId link
 - WAKE / MESSAGE routing without semantic chat reading
-- external UX/API references before major UI or architecture changes
-
-See `docs/DEVELOPMENT_CHECKPOINT.md`, `docs/RECONSTRUCTION_PLAN_v0.8.7.md`, and latest-only `docs/BATON.md` for durable development state.
+- authoritative references before material UX/API/architecture changes
