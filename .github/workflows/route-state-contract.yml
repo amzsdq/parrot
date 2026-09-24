@@ -46,6 +46,7 @@ jobs:
       - run: node scripts/test-live-smoke-verifier.mjs
       - run: bash scripts/test-release-candidate-snapshot.sh
       - run: bash scripts/test-release-tooling-snapshot.sh
+      - run: bash scripts/test-release-build-lock.sh
       - run: bash scripts/test-release-worktree.sh
       - run: bash scripts/test-release-limitations.sh
       - run: bash scripts/test-release-preflight.sh
