@@ -20,7 +20,7 @@ CANDIDATE='0123456789abcdef0123456789abcdef01234567'
 bash "$ROOT/scripts/verify-candidate-live-evidence.sh" "$RESULT" "$CANDIDATE"
 mapfile -t args < "$CAPTURE"
 [[ ${#args[@]} -eq 3 ]]
-[[ ${args[0]} == scripts/verify-live-smoke-result.mjs ]]
+[[ ${args[0]} == "$ROOT/scripts/verify-live-smoke-result.mjs" ]]
 [[ ${args[1]} == "$RESULT" ]]
 [[ ${args[2]} == "$CANDIDATE" ]]
 
@@ -35,4 +35,4 @@ if bash "$ROOT/scripts/verify-candidate-live-evidence.sh" "$RESULT" >/dev/null 2
   exit 1
 fi
 
-echo 'PASS: candidate-bound live-evidence wrapper forwards exact result/SHA and preserves verifier failure.'
+echo 'PASS: candidate-bound live-evidence wrapper resolves its verifier beside itself, forwards exact result/SHA, and preserves verifier failure.'
