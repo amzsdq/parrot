@@ -2,43 +2,36 @@
 
 Status: CONTINUE
 Current line: v0.8.7-reconstruction
-Current milestone: M6 — Real Chromium + ChatGPT validation / PLAN
+Current milestone: M6 — Real Chromium + ChatGPT validation / VERIFY
+Current criterion: M6-C2
 
 ## Execution model
-- `docs/MILESTONES.md` is the single work/progress authority; no BATON layer.
-- `PLAN -> BUILD -> VERIFY -> FIX -> VERIFY ... -> DONE`; UNVERIFIED != PASS.
-- Normal stop gates only ALL_MILESTONES_DONE or verified SUCCESSOR_HANDOFF_COMPLETE.
-- GitHub issue #1 comment `created_at` is timing authority.
+`docs/MILESTONES.md` is the single work/progress authority; no BATON layer. Milestones use PLAN→BUILD→VERIFY→FIX→VERIFY→DONE; UNVERIFIED != PASS. Normal stop gates only ALL_MILESTONES_DONE or verified SUCCESSOR_HANDOFF_COMPLETE. GitHub issue #1 comment created_at is timing authority.
 
 ## Completed milestones
-- M0 scope/relay contract — DONE.
-- M1 routing/delivery reliability — DONE: exact target, strong receipt, ambiguity fail-closed + Retry/Resolve, structural signal dedupe.
-- M2 runner lifecycle/reload — DONE: exact-URL auto-arm, configured delay/sendImmediately policy, token registry, overlap/mode-transition/stale-release fencing; exact-head run 35978969555 succeeded.
-- M3 dashboard/fleet static UX — DONE: exact-target Start/Stop/Open, tested dashboard model, 73-worker fixture, actionable structural labels/ambiguity actions. Real browser remains M6.
-- M4 popup/templates/cooldown static UX — DONE: clamps/defaults, routing templates, structural cooldown, compact overflow/overlay contract, status surfaces. Real viewport remains M6.
-- M5 rebuildable candidate — DONE: exact candidate workflow head `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`, Actions run `35979821480` SUCCESS. Candidate build step passed deterministic ZIP creation, `unzip -t`, sorted content list, SHA-256 generation, manifest version check, then uploaded NON-RELEASE artifact id `10798948865`; Actions artifact digest `sha256:ca6ece70268ebf304cdab16260515911eeea45b6b67d44d981238c93bfdb251c`. Inner candidate SHA-256 is included in artifact evidence as `candidate.sha256`.
+- M0 scope/relay contract DONE.
+- M1 routing/delivery reliability DONE: exact target, strong receipt, ambiguity fail-closed + Retry/Resolve, structural signal dedupe.
+- M2 runner lifecycle/reload DONE: exact-URL auto-arm, delay/sendImmediately, token registry overlap/mode/stale-release fencing; run 35978969555.
+- M3 dashboard/fleet static UX DONE: exact-target Start/Stop/Open, tested dashboard model, 73-worker fixture, actionable structural labels.
+- M4 popup/templates/cooldown static UX DONE: clamps/templates/cooldown, compact overflow/overlay contract, status surfaces.
+- M5 rebuildable candidate DONE: exact candidate source `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`; run `35979821480` SUCCESS; NON-RELEASE artifact `10798948865`; Actions artifact digest `sha256:ca6ece70268ebf304cdab16260515911eeea45b6b67d44d981238c93bfdb251c`; inner candidate SHA is in artifact `candidate.sha256`.
 
-## Current M6 gate
-- Static CI cannot satisfy M6.
-- Candidate-bound checklist: `docs/LIVE_SMOKE_CHECKLIST.md`.
-- Candidate-bound result form: `docs/LIVE_SMOKE_RESULT_TEMPLATE.md`.
-- Required real cases: unpacked load; exact-target Dashboard control while Dashboard active; strong receipt; response/interval; configured delay/sendImmediately=false; reload/single-runner fence; COMPLETE; WAKE/MESSAGE; fleet/action feedback/popup viewport.
-- S9 ambiguity and S10 genuine cooldown may be NOT_OBSERVED only when unsafe/unavailable to reproduce naturally; this remains an explicit limitation, not PASS.
-- Any observed FAIL reopens affected earlier milestone.
-- This automation runtime currently has GitHub/scheduler tools but no real authenticated Chromium+ChatGPT execution surface; therefore M6 remains UNVERIFIED rather than being falsely closed from static evidence.
+## M6 evidence
+- M6-C1 PASS: real Google Chrome on GitHub-hosted Ubuntu loaded the exact M5 candidate as an unpacked extension. After two probe-method failures, the third method derived Chrome's deterministic unpacked extension ID from the exact candidate path, launched Chrome with only that extension enabled, opened its dashboard extension URL, and verified that URL through DevTools. Actions run `35980470638` completed SUCCESS. This proves real Chromium extension/manifest/dashboard loading; it does not prove ChatGPT integration.
+- M6-C2..C8 remain UNVERIFIED. C2 next requires authenticated real ChatGPT tabs, unavailable to this GitHub runner.
+- Checklist/result: `docs/LIVE_SMOKE_CHECKLIST.md`, `docs/LIVE_SMOKE_RESULT_TEMPLATE.md`.
+- Machine gate: `scripts/verify-live-smoke-result.mjs`; self-test `scripts/test-live-smoke-verifier.mjs`.
+- S9 ambiguity/S10 cooldown may be explicit NOT_OBSERVED only per checklist; observed FAIL reopens earlier milestone.
 
-## M7 preparation already completed while M6 awaits external browser evidence
-- `docs/RELEASE_NOTES_DRAFT.md` records candidate install procedure, v0.8.7 capabilities, deferred provider adapters, browser-DOM dependency, ambiguity/cooldown observation limitations, and final release checklist.
-- README now includes candidate install/test instructions and explicitly labels candidate NON-RELEASE.
-- M7 remains PENDING; no final release ZIP or PROGRAM_COMPLETE claim before M6.
-
-## Recovered baseline evidence
-Recovered Library `parrot_extension_v0.8.0.zip` SHA-256: `4c9d27a0e866fe60802f19717a962034dbfc7c1ba873d116359e4566075dc1ef`. Historical blobs: background `c32103090f349f3397ea489594236f2433c55af6`; content `c1e41165d7d5f7fda794aea3f120ec8775782e32`; dashboard `72210244ef1b7f89c0f593d4abda77a72865319d`; popup target `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`. Do not label old runtime bytes v0.8.6.
+## M7 preparation while authenticated browser evidence is pending
+- `docs/RELEASE_NOTES_DRAFT.md` and README candidate install/limitations are ready.
+- `scripts/build-final-release.sh` is fail-closed: it requires candidate/source-bound M6 evidence verifier PASS before repository verification and final ZIP/hash/content checks.
+- No final release ZIP or PROGRAM_COMPLETE claim before M6.
 
 ## Remaining release path
-1. Execute M6 real browser checklist against exact candidate source/artifact; fix/retest any failure.
-2. When M6 PASS, freeze final source and produce M7 release ZIP/instructions/limitations.
+1. Execute M6-C2 onward in authenticated real Chromium+ChatGPT against exact candidate; fix/retest any observed failure.
+2. When M6 PASS, freeze final source and run fail-closed M7 release builder.
 3. PROGRAM_COMPLETE only after M7 durable evidence.
 
 ## Scope
-ChatGPT-first. Prefer reliability/simplification/recoverability/regression fixes over feature expansion. Do not add Claude/Gemini/Grok implementations before ChatGPT-first release gate closes.
+ChatGPT-first. Reliability/simplification/recoverability before feature expansion. Claude/Gemini/Grok implementations remain deferred.
