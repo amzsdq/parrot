@@ -47,21 +47,116 @@
         <option value="response">응답 종료 후 자동 전송</option>
         <option value="interval">고정 주기 전송</option>
       </select>
-      <section id="responseOptions" class="inline-option"><span>대기</span><input id="delaySec" type="number" min="0" step="1" value="3" aria-label="응답 종료 후 대기 초" /><span>초</span><label class="check mini"><input id="sendImmediately" type="checkbox" checked /> 즉시 시작</label></section>
-      <section id="intervalOptions" class="inline-option" hidden><span>간격</span><input id="intervalMin" type="number" min="1" step="1" value="11" aria-label="전송 간격 분" /><span>분</span></section>
+
+      <section id="responseOptions" class="inline-option">
+        <span>대기</span>
+        <input id="delaySec" type="number" min="0" step="1" value="3" aria-label="응답 종료 후 대기 초" />
+        <span>초</span>
+        <label class="check mini"><input id="sendImmediately" type="checkbox" checked /> 즉시 시작</label>
+      </section>
+
+      <section id="intervalOptions" class="inline-option" hidden>
+        <span>간격</span>
+        <input id="intervalMin" type="number" min="1" step="1" value="11" aria-label="전송 간격 분" />
+        <span>분</span>
+      </section>
     </div>
 
-    <div class="sub-actions"><button id="toggleConnectionSettings" class="secondary tiny" type="button">연결 설정</button><button id="toggleCompletionRuleEditor" class="secondary tiny" type="button">완료 규칙</button><button id="toggleAdvancedSettings" class="secondary tiny" type="button">고급 설정</button></div>
-    <section class="statusBox" aria-label="상태"><div><span>상태</span><strong id="status">중지</strong></div><div><span>전송</span><strong id="sentCount">0회</strong></div><div><span>오류</span><strong id="lastError">없음</strong></div><div><span>쿨다운</span><strong id="cooldown">없음</strong></div></section>
-    <div class="actions"><button id="start">시작</button><button id="pause" class="secondary">일시정지</button><button id="stop" class="secondary">중지</button><button id="delete" class="danger">삭제</button></div>
+    <div class="sub-actions">
+      <button id="toggleConnectionSettings" class="secondary tiny" type="button">연결 설정</button>
+      <button id="toggleCompletionRuleEditor" class="secondary tiny" type="button">완료 규칙</button>
+      <button id="toggleAdvancedSettings" class="secondary tiny" type="button">고급 설정</button>
+    </div>
+
+    <section class="statusBox" aria-label="상태">
+      <div><span>상태</span><strong id="status">중지</strong></div>
+      <div><span>전송</span><strong id="sentCount">0회</strong></div>
+      <div><span>오류</span><strong id="lastError">없음</strong></div>
+      <div><span>쿨다운</span><strong id="cooldown">없음</strong></div>
+    </section>
+
+    <div class="actions">
+      <button id="start">시작</button>
+      <button id="pause" class="secondary">일시정지</button>
+      <button id="stop" class="secondary">중지</button>
+      <button id="delete" class="danger">삭제</button>
+    </div>
+
     <p id="message"></p>
   </main>
 
-  <div id="connectionSettings" class="overlay" hidden><section class="modal-card connection-modal"><div class="modal-head"><strong>연결 설정</strong><button id="closeConnectionSettings" class="secondary tiny" type="button">닫기</button></div><div class="setting-tabs" role="tablist" aria-label="연결 설정 종류"><button id="connectionTabOnboarding" class="secondary tiny active" type="button">온보딩</button><button id="connectionTabWake" class="secondary tiny" type="button">WAKE</button><button id="connectionTabMessage" class="secondary tiny" type="button">MESSAGE</button></div><section id="connectionPanelOnboarding" class="connection-panel"><label class="check modal-check"><input id="onboardingEnabled" type="checkbox" checked /> 실행 첫 전송에 온보딩 1회 첨부</label><textarea id="onboardingTemplate" rows="9" spellcheck="false"></textarea><small><code>{{SELF}}</code>, <code>{{WAKE_URL}}</code>, <code>{{MESSAGE_URL}}</code>, <code>{{TARGETS}}</code>을 사용할 수 있습니다.</small><div class="rule-actions"><button id="resetOnboardingTemplate" class="secondary" type="button">기본값 복원</button></div></section><section id="connectionPanelWake" class="connection-panel" hidden><label for="wakePrompt">WAKE 시 대상에게 보낼 문구</label><textarea id="wakePrompt" rows="5" spellcheck="false"></textarea><small>WAKE는 내용 없는 호출입니다. 이 문구만 대상 대화에 전달합니다.</small><div class="rule-actions"><button id="resetWakePrompt" class="secondary" type="button">기본값 복원</button></div></section><section id="connectionPanelMessage" class="connection-panel" hidden><label for="messageTemplate">MESSAGE 전달 형식</label><textarea id="messageTemplate" rows="8" spellcheck="false"></textarea><small><code>{{FROM}}</code>, <code>{{TO}}</code>, <code>{{SOURCE_URL}}</code>, <code>{{TARGET_URL}}</code>, <code>{{MESSAGE}}</code>을 사용할 수 있습니다.</small><div class="rule-actions"><button id="resetMessageTemplate" class="secondary" type="button">기본값 복원</button></div></section></section></div>
+  <div id="connectionSettings" class="overlay" hidden>
+    <section class="modal-card connection-modal">
+      <div class="modal-head">
+        <strong>연결 설정</strong>
+        <button id="closeConnectionSettings" class="secondary tiny" type="button">닫기</button>
+      </div>
 
-  <div id="completionRuleEditor" class="overlay" hidden><section class="modal-card"><div class="modal-head"><strong>완료 규칙</strong><button id="closeCompletionRuleEditor" class="secondary tiny" type="button">닫기</button></div><label class="check modal-check"><input id="appendCompletionInstruction" type="checkbox" checked /> 프롬프트에 완료 규칙 자동 첨부</label><textarea id="completionInstructionTemplate" rows="6" spellcheck="false"></textarea><small><code>{{SIGNAL_URL}}</code>은 정확히 한 번 포함해야 합니다.</small><div class="rule-actions"><button id="resetCompletionInstruction" class="secondary" type="button">기본값 복원</button></div></section></div>
+      <div class="setting-tabs" role="tablist" aria-label="연결 설정 종류">
+        <button id="connectionTabOnboarding" class="secondary tiny active" type="button">온보딩</button>
+        <button id="connectionTabWake" class="secondary tiny" type="button">WAKE</button>
+        <button id="connectionTabMessage" class="secondary tiny" type="button">MESSAGE</button>
+      </div>
 
-  <div id="advancedSettings" class="overlay" hidden><section class="modal-card compact-modal"><div class="modal-head"><strong>고급 설정</strong><button id="closeAdvancedSettings" class="secondary tiny" type="button">닫기</button></div><div class="grid2"><div><label for="maxRepeats">반복 횟수</label><input id="maxRepeats" type="number" min="0" step="1" value="0" /><small>0 = 무제한</small></div><div><label for="runtimeMin">총 실행시간(분)</label><input id="runtimeMin" type="number" min="0" step="1" value="0" /><small>0 = 무제한</small></div></div><small class="modal-note">Target 이름·Route ID·이벤트 기록은 대시보드에서 관리합니다.</small></section></div>
+      <section id="connectionPanelOnboarding" class="connection-panel">
+        <label class="check modal-check"><input id="onboardingEnabled" type="checkbox" checked /> 실행 첫 전송에 온보딩 1회 첨부</label>
+        <textarea id="onboardingTemplate" rows="9" spellcheck="false"></textarea>
+        <small><code>{{SELF}}</code>, <code>{{WAKE_URL}}</code>, <code>{{MESSAGE_URL}}</code>, <code>{{TARGETS}}</code>을 사용할 수 있습니다.</small>
+        <div class="rule-actions"><button id="resetOnboardingTemplate" class="secondary" type="button">기본값 복원</button></div>
+      </section>
+
+      <section id="connectionPanelWake" class="connection-panel" hidden>
+        <label for="wakePrompt">WAKE 시 대상에게 보낼 문구</label>
+        <textarea id="wakePrompt" rows="5" spellcheck="false"></textarea>
+        <small>WAKE는 내용 없는 호출입니다. 이 문구만 대상 대화에 전달합니다.</small>
+        <div class="rule-actions"><button id="resetWakePrompt" class="secondary" type="button">기본값 복원</button></div>
+      </section>
+
+      <section id="connectionPanelMessage" class="connection-panel" hidden>
+        <label for="messageTemplate">MESSAGE 전달 형식</label>
+        <textarea id="messageTemplate" rows="8" spellcheck="false"></textarea>
+        <small><code>{{FROM}}</code>, <code>{{TO}}</code>, <code>{{SOURCE_URL}}</code>, <code>{{TARGET_URL}}</code>, <code>{{MESSAGE}}</code>을 사용할 수 있습니다.</small>
+        <div class="rule-actions"><button id="resetMessageTemplate" class="secondary" type="button">기본값 복원</button></div>
+      </section>
+    </section>
+  </div>
+
+  <div id="completionRuleEditor" class="overlay" hidden>
+    <section class="modal-card">
+      <div class="modal-head">
+        <strong>완료 규칙</strong>
+        <button id="closeCompletionRuleEditor" class="secondary tiny" type="button">닫기</button>
+      </div>
+      <label class="check modal-check"><input id="appendCompletionInstruction" type="checkbox" checked /> 프롬프트에 완료 규칙 자동 첨부</label>
+      <textarea id="completionInstructionTemplate" rows="6" spellcheck="false"></textarea>
+      <small><code>{{SIGNAL_URL}}</code>은 정확히 한 번 포함해야 합니다.</small>
+      <div class="rule-actions">
+        <button id="resetCompletionInstruction" class="secondary" type="button">기본값 복원</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="advancedSettings" class="overlay" hidden>
+    <section class="modal-card compact-modal">
+      <div class="modal-head">
+        <strong>고급 설정</strong>
+        <button id="closeAdvancedSettings" class="secondary tiny" type="button">닫기</button>
+      </div>
+      <div class="grid2">
+        <div>
+          <label for="maxRepeats">반복 횟수</label>
+          <input id="maxRepeats" type="number" min="0" step="1" value="0" />
+          <small>0 = 무제한</small>
+        </div>
+        <div>
+          <label for="runtimeMin">총 실행시간(분)</label>
+          <input id="runtimeMin" type="number" min="0" step="1" value="0" />
+          <small>0 = 무제한</small>
+        </div>
+      </div>
+      <small class="modal-note">Target 이름·Route ID·이벤트 기록은 대시보드에서 관리합니다.</small>
+    </section>
+  </div>
 
   <script src="popup.js"></script>
 </body>
