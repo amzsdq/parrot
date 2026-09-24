@@ -19,14 +19,14 @@ M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (
 
 ## M7 preparation while authenticated browser evidence is pending
 - Commit `38f959e7ba631ac2e7be217e329f0dcc9cd0d5e4` made the final builder explicitly fail closed when NOT_OBSERVED evidence lacks release-note coverage. Exact-head run `35992931371` succeeded.
-- The independent limitation-note regression is confirmed in integration run `35993385261`: `scripts/test-release-limitations.sh` completed SUCCESS together with the full Route State Contract job. The gate rejects missing notes, missing S9 text, missing S10 text, and permits complete/no-limitation evidence.
-- Final-builder boundary coverage is now explicit. `scripts/test-final-release-boundaries.sh` guards dirty unstaged/staged/untracked `extension/`, candidate-tree identity, candidate-bound live verification, limitation gate invocation, stale-output cleanup, ZIP integrity, checksum, and provenance fields. CI was updated to syntax-check and execute it. Integration head `5b85b9736aba16124f72149afffb6f732219cc99`; run `35993671018` was queued when this checkpoint was written and must be confirmed next.
-- These are structural regression guards, not substitutes for the authenticated M6 browser evidence and not proof of the full builder success path. M6/M7 remain open.
-- Product bytes remain intentionally untouched during this release-tooling hardening; any `extension/` change would require a new candidate and M6 repetition.
+- The independent limitation-note regression is confirmed in integration run `35993385261`: `scripts/test-release-limitations.sh` completed SUCCESS together with the full Route State Contract job.
+- Final-builder boundary coverage is explicit and CI-confirmed. `scripts/test-final-release-boundaries.sh` guards dirty unstaged/staged/untracked `extension/`, candidate-tree identity, candidate-bound live verification, limitation gate invocation, stale-output cleanup, ZIP integrity, checksum, and provenance fields. Integration head `5b85b9736aba16124f72149afffb6f732219cc99`; Route State Contract run `35993671018` completed SUCCESS, including the new boundary regression step.
+- The current boundary test is intentionally structural. The next useful hardening is an executable harness that proves the builder exits non-zero for dirty-tree and candidate-drift cases before authenticated-live evidence is needed, reducing reliance on source-pattern assertions.
+- These release-tooling tests do not substitute for authenticated M6 browser evidence and do not close M6/M7. Product bytes remain intentionally untouched.
 
 ## Remaining path
-1. Confirm Route State Contract run `35993671018`; if the new boundary regression fails, inspect the exact failed pattern and repair it immediately.
-2. If green, strengthen the highest-value remaining release boundary with executable behavior rather than only source-pattern assertions where practical; prioritize dirty-tree/candidate-drift rejection without needing authenticated live evidence.
+1. Build an executable final-builder preflight test harness for dirty-tree and candidate-tree drift rejection, preferably by extracting or isolating preflight logic so it can run without authenticated live evidence.
+2. Keep the production builder consuming the same preflight logic to avoid test/production divergence, then run it in Route State Contract CI.
 3. Obtain a supported authenticated interactive Chrome+ChatGPT surface and execute M6-C2 onward against exact candidate.
 4. After M6 PASS, re-verify candidate tree identity, freeze release-repository SHA, run the final builder, persist ZIP/file-list/hash/provenance evidence, and close M7 only when every criterion passes.
 
