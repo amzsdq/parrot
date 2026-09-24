@@ -22,21 +22,28 @@ trap cleanup_failed_release ERR
 bash scripts/verify-release-worktree.sh "$NOTES"
 bash scripts/verify-release-preflight.sh "$CANDIDATE_SHA"
 
+# Freeze the external live-evidence bytes once. Verification and provenance
+# must consume the same immutable snapshot; otherwise RESULT could change
+# between the gate and provenance hashing and misrepresent what was verified.
+[[ -f "$RESULT" ]] || { echo "FAIL: live result missing: $RESULT" >&2; exit 1; }
+RESULT_SNAPSHOT=$(mktemp)
+cp -- "$RESULT" "$RESULT_SNAPSHOT"
+cleanup_result_snapshot() { rm -f -- "$RESULT_SNAPSHOT"; }
+trap cleanup_result_snapshot EXIT
+
 echo "Verifying live browser evidence for candidate $CANDIDATE_SHA"
-GATE_OUTPUT=$(bash scripts/verify-candidate-live-evidence.sh "$RESULT" "$CANDIDATE_SHA")
+GATE_OUTPUT=$(bash scripts/verify-candidate-live-evidence.sh "$RESULT_SNAPSHOT" "$CANDIDATE_SHA")
 echo "$GATE_OUTPUT"
 
 echo "PASS: release extension tree is identical to M6 candidate $CANDIDATE_SHA (release repo $RELEASE_SHA)"
 
 GATE_OUTPUT_FILE=$(mktemp)
-trap 'rm -f "$GATE_OUTPUT_FILE"' EXIT
 printf '%s\n' "$GATE_OUTPUT" > "$GATE_OUTPUT_FILE"
 bash scripts/verify-release-limitations.sh "$GATE_OUTPUT_FILE" "$NOTES"
 rm -f "$GATE_OUTPUT_FILE"
-trap - EXIT
 
 bash scripts/verify-release-repository.sh
 bash scripts/build-release-archive.sh "$OUT" "$VERSION" extension
-bash scripts/write-release-provenance.sh "$OUT" "$CANDIDATE_SHA" "$RELEASE_SHA" "$RESULT"
+bash scripts/write-release-provenance.sh "$OUT" "$CANDIDATE_SHA" "$RELEASE_SHA" "$RESULT_SNAPSHOT"
 echo "PASS: final release artifact built only after candidate-bound authenticated live evidence, candidate-tree identity, and limitation gates."
 trap - ERR
