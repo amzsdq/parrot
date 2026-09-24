@@ -4,11 +4,16 @@ ROOT=$(git rev-parse --show-toplevel)
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 OUT="$TMP/release.zip"
+PAYLOAD="$TMP/payload"
+mkdir -p "$PAYLOAD"
+printf '{"manifest_version":3,"name":"Parrot","version":"0.8.7"}\n' > "$PAYLOAD/manifest.json"
+printf 'payload\n' > "$PAYLOAD/content.js"
 
 make_release() {
-  printf 'artifact bytes\n' > "$OUT"
+  rm -f "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt" "$OUT.ready"
+  (cd "$PAYLOAD" && zip -q -X -r "$OUT" .)
+  unzip -Z1 "$OUT" | LC_ALL=C sort > "$OUT.files.txt"
   sha256sum "$OUT" > "$OUT.sha256"
-  printf 'manifest.json\n' > "$OUT.files.txt"
   ARTIFACT_SHA=$(sha256sum "$OUT" | awk '{print $1}')
   printf 'candidate_sha=test\nrelease_repo_sha=test\nartifact_sha256=%s\nlive_result_sha256=test\n' "$ARTIFACT_SHA" > "$OUT.provenance.txt"
 }
@@ -41,6 +46,22 @@ for target in "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt"; do
   fi
 done
 
+# A forged bundle can recompute .ready hashes after changing a sidecar. The
+# consumer must still reject semantic disagreement with the ZIP itself.
+make_release
+printf 'forged-entry.js\n' > "$OUT.files.txt"
+bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
+if bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" >/dev/null 2>&1; then
+  echo 'FAIL: self-consistent ready marker accepted forged file-list semantics' >&2; exit 1
+fi
+
+make_release
+printf '%s  other-release.zip\n' "$ARTIFACT_SHA" > "$OUT.sha256"
+bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
+if bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" >/dev/null 2>&1; then
+  echo 'FAIL: self-consistent ready marker accepted checksum for another artifact name' >&2; exit 1
+fi
+
 # The marker itself is also untrusted input at consumption time.
 make_release
 bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
@@ -56,4 +77,4 @@ if bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null 2>&1; then
 fi
 [[ ! -e "$OUT.ready" ]] || { echo 'FAIL: failed publish left ready marker' >&2; exit 1; }
 
-echo 'PASS: readiness is generated last and must be revalidated against every component when consumed.'
+echo 'PASS: readiness is generated last and consumption revalidates byte and semantic binding.'
