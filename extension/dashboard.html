@@ -46,61 +46,26 @@
 
       <div class="table-wrap worker-table-wrap">
         <table class="worker-table">
-          <thead>
-            <tr>
-              <th>Worker</th>
-              <th>Chat</th>
-              <th>Tab</th>
-              <th>Run</th>
-              <th>Activity</th>
-              <th>Sent</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Worker</th><th>Chat</th><th>Tab</th><th>Run</th><th>Activity</th><th>Sent</th><th class="actions-col">Actions</th></tr></thead>
           <tbody id="workersBody"></tbody>
         </table>
         <div id="emptyWorkers" class="empty" hidden>조건에 맞는 Worker가 없습니다.</div>
         <div id="workerPager" class="pager" hidden>
           <span id="workerRange">0–0 / 0</span>
           <label>페이지당 <select id="workerPageSize" aria-label="페이지당 Worker 수"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option></select></label>
-          <button id="workerPrev" class="soft small" type="button">이전</button>
-          <button id="workerNext" class="soft small" type="button">다음</button>
+          <button id="workerPrev" class="soft small" type="button">이전</button><button id="workerNext" class="soft small" type="button">다음</button>
         </div>
       </div>
     </section>
 
     <section class="lower-grid">
-      <section class="panel">
-        <div class="section-head">
-          <div>
-            <h2>Routing</h2>
-            <p>WAKE / MESSAGE 전달 상태. MESSAGE 본문은 저장하지 않습니다.</p>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Type</th><th>From → To</th><th>Status</th><th>Time</th><th>Action</th></tr></thead>
-            <tbody id="routingBody"></tbody>
-          </table>
-          <div id="emptyRouting" class="empty compact" hidden>라우팅 기록이 없습니다.</div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="section-head">
-          <div>
-            <h2>Recent events</h2>
-            <p>실행·완료·라우팅 이벤트의 최근 기록입니다.</p>
-          </div>
-        </div>
-        <div id="events" class="event-list"></div>
-        <div id="emptyEvents" class="empty compact" hidden>표시할 이벤트가 없습니다.</div>
-      </section>
+      <section class="panel"><div class="section-head"><div><h2>Routing</h2><p>WAKE / MESSAGE 전달 상태. MESSAGE 본문은 저장하지 않습니다.</p></div></div><div class="table-wrap"><table><thead><tr><th>Type</th><th>From → To</th><th>Status</th><th>Time</th><th>Action</th></tr></thead><tbody id="routingBody"></tbody></table><div id="emptyRouting" class="empty compact" hidden>라우팅 기록이 없습니다.</div></div></section>
+      <section class="panel"><div class="section-head"><div><h2>Recent events</h2><p>실행·완료·라우팅 이벤트의 최근 기록입니다.</p></div></div><div id="events" class="event-list"></div><div id="emptyEvents" class="empty compact" hidden>표시할 이벤트가 없습니다.</div></section>
     </section>
 
-    <p class="footnote">Live tab 상태는 채팅 본문을 읽지 않고 탭/DOM의 구조적 신호만 확인합니다.</p>
-    <p id="toast" class="toast" aria-live="polite"></p>
+    <p class="footnote">Live tab 상태는 채팅 본문을 읽지 않고 탭/DOM의 구조적 신호만 확인합니다.</p><p id="toast" class="toast" aria-live="polite"></p>
   </main>
+  <script src="route-state.js"></script>
   <script src="dashboard.js"></script>
 </body>
 </html>
