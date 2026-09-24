@@ -6,10 +6,16 @@ CURRENT_VERSION=v0.8.7-reconstruction
 STATUS=CONTINUE
 WORK_PACKAGE_ID=PARROT-BATON-018
 PACKAGE_KIND=LIFECYCLE_RACE_VERIFICATION_AND_CANDIDATE_BUILD
+MILESTONE_ID=M2
+MILESTONE_PHASE=BUILD
+ACTIVE_CRITERION=M2-C6
 EXPECTED_ACTIVE_MINUTES=14
 NEXT_WAKE_DELAY_MINUTES=14
 SHORT_PACKAGE_REASON=NONE
 WORK_TIME_MARKER_ISSUE=amzsdq/parrot#1
+
+MILESTONE_SOURCE=docs/MILESTONES.md
+MILESTONE_RULE=BATON is a bounded execution slice derived from the first unmet milestone criterion; BATON completion never implies milestone completion.
 
 CURRENT_TASK=
 Harden the newly wired runner lifecycle against startup/storage/manual-start races, then prepare a repository-only v0.8.7 candidate build if deterministic verification remains green.
