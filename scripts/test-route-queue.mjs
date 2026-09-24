@@ -39,8 +39,8 @@ assert(reconciled.item.ambiguity.message === undefined && reconciled.item.ambigu
 const retry = await api.manualRetry('a1');
 assert(retry.ok && retry.dispatched && dispatches.filter((id) => id === 'a1').length === 1, 'manual retry authorizes exactly one dispatch call');
 
-const resolve = await api.manualResolve('p1');
-assert(resolve.ok && resolve.item.status === 'resolved' && !resolve.dispatched, 'manual resolve is terminal without dispatch');
+const resolved = await api.manualResolve('p1');
+assert(resolved.ok && resolved.item.status === 'resolved' && !resolved.dispatched, 'manual resolve is terminal without dispatch');
 
 const delivered = await api.recordDelivered('a1', { deliveredAt: 6000 });
 assert(delivered.status === 'delivered' && delivered.deliveredAt === 6000, 'strong receipt marks delivered');
