@@ -15,32 +15,17 @@
 
   function reconcileAmbiguity(record, receipt = {}) {
     if (!record || TERMINAL_ROUTE_STATUSES.has(record.status)) return record;
-    return {
-      ...record,
-      status: 'ambiguous',
-      ambiguousAt: receipt.ambiguousAt ?? Date.now(),
-      ambiguity: receipt
-    };
+    return { ...record, status: 'ambiguous', ambiguousAt: receipt.ambiguousAt ?? Date.now(), ambiguity: receipt };
   }
 
-  function manualRetry(record) {
+  function manualRetry(record, authorizedAt = Date.now()) {
     if (record?.status !== 'ambiguous') return record;
-    return {
-      ...record,
-      status: 'pending',
-      retryAuthorizedAt: Date.now(),
-      ambiguity: null
-    };
+    return { ...record, status: 'pending', retryAuthorizedAt: authorizedAt, ambiguity: null };
   }
 
   function manualResolve(record, resolvedAt = Date.now()) {
     if (record?.status !== 'ambiguous') return record;
-    return {
-      ...record,
-      status: 'resolved',
-      resolvedAt,
-      ambiguity: null
-    };
+    return { ...record, status: 'resolved', resolvedAt, ambiguity: null };
   }
 
   function pruneRouteRecords(records, maxRouteRecords) {
@@ -53,12 +38,25 @@
     return [...active, ...terminal.slice(0, remaining)];
   }
 
+  function classifyTabStructure(tab) {
+    if (!tab) return { structuralState: 'not_open', frozenSupport: 'unknown', ordinaryContentFailure: false };
+    if (tab.discarded === true) return { structuralState: 'discarded', frozenSupport: 'frozen' in tab ? 'supported' : 'unknown', ordinaryContentFailure: false };
+    if (tab.frozen === true) return { structuralState: 'frozen', frozenSupport: 'supported', ordinaryContentFailure: false, messageMayBeQueuedUntilUnfreeze: true };
+    return {
+      structuralState: 'open',
+      frozenSupport: 'frozen' in tab ? 'supported' : 'unknown',
+      ordinaryContentFailure: false,
+      mustNotInferFrozenFalse: !('frozen' in tab)
+    };
+  }
+
   globalThis.ParrotRouteState = Object.freeze({
     classifyStrongReceipt,
     canAutoDispatch,
     reconcileAmbiguity,
     manualRetry,
     manualResolve,
-    pruneRouteRecords
+    pruneRouteRecords,
+    classifyTabStructure
   });
 })();
