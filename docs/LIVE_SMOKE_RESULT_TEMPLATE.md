@@ -5,12 +5,14 @@ Candidate Actions run: `35979821480`
 Candidate artifact id: `10798948865`
 Candidate label: **NON-RELEASE — M6 browser gate required**
 
-Tester fills this file only from a real Chromium/Chrome + ChatGPT execution. Static evidence must not be copied in as PASS.
+Tester fills this file only from a real Chromium/Chrome + authenticated ChatGPT execution. Static evidence must not be copied in as PASS. Record only structural authentication evidence (for example account/avatar/menu presence); never store account identity, cookies, tokens, or chat prose.
 
 ## Environment
 - Browser + version:
 - OS:
 - Extension loaded from exact candidate source/artifact: YES / NO
+- Authenticated ChatGPT session structurally confirmed: YES / NO
+- Authentication structural evidence (no identity/secrets):
 - UTC start:
 - ChatGPT worker URLs/labels used (URLs only; no chat prose):
 
