@@ -4,49 +4,51 @@ Latest-only continuation pointer; full snapshots are mirrored to `docs/DEVELOPME
 
 CURRENT_VERSION=v0.8.7-reconstruction
 STATUS=CONTINUE
-WORK_PACKAGE_ID=PARROT-BATON-010
-PACKAGE_KIND=COOLDOWN_COMPAT_AND_BROWSER_GATE
+WORK_PACKAGE_ID=PARROT-BATON-011
+PACKAGE_KIND=RELEASE_GATE_HARDENING
 EXPECTED_ACTIVE_MINUTES=14
 NEXT_WAKE_DELAY_MINUTES=14
 SHORT_PACKAGE_REASON=NONE
 WORK_TIME_MARKER_ISSUE=amzsdq/parrot#1
 
 CURRENT_TASK=
-Harden the newly wired structural cooldown runtime against existing popup storage semantics, then pursue the highest-value real-browser release evidence available.
+Close the remaining static release gaps that can be proven without a live browser, while keeping real ChatGPT smoke as a separate non-fakeable gate.
 
 COMPLETED_PREVIOUS=
-- `chatgpt-adapter.js` now exposes `classifyCooldown()` using structural selectors/attributes only; it does not inspect assistant/user message prose or node text for cooldown classification.
-- `repeat-policy.js` now exposes `cooldownDue()` and `nextCooldown()` in addition to the 10→20→40→60 rate-limit and 2→5→10→20 transient ladders; interval eligibility now respects persisted cooldown deadlines.
-- `content.js` now checks structural cooldown before sends, persists only kind/attempt/until/error code, blocks while cooldown is active, and clears cooldown state after a confirmed successful send.
-- Added deterministic `test-chatgpt-adapter-structure.mjs`; a fake assistant message containing “Too many requests” alone is explicitly NOT classified as cooldown.
-- CI now syntax-checks the adapter and runs the structural boundary test. Latest full Route State Contract job for integration guard revision completed all 21 functional/check steps successfully.
-- Existing popup schema was inspected after integration. It already has `cooldownEnabled`, `cooldownStep`, and `cooldownUntil`; the new runtime currently uses `cooldownAttempt` rather than the legacy `cooldownStep`. This compatibility mismatch is known and must be normalized before release.
-- No real ChatGPT browser smoke was claimed: this runtime has repository/Actions access but no attached interactive Chrome execution surface for loading the unpacked extension and exercising ChatGPT DOM.
+- Structural cooldown classification is implemented without reading assistant/user prose; deterministic boundary test proves assistant text alone cannot trigger cooldown.
+- Repeat policy exposes rate-limit 10→20→40→60 and transient 2→5→10→20 ladders plus due/next transition helpers.
+- Response and interval runners now honor `cooldownEnabled`; disabled targets bypass cooldown classification and stale cooldown state is cleared.
+- Existing popup `cooldownStep` is now the canonical attempt counter. Runtime reads legacy/new attempt state for migration compatibility, writes `cooldownStep`, and clears it on confirmed success.
+- Added `test-cooldown-storage-contract.mjs` and wired it into CI alongside adapter structural-boundary testing.
+- Routed WAKE/MESSAGE sends now share target cooldown backpressure: background imports repeat policy, skips tab dispatch while target cooldown is active, persists structural cooldown returned by content, and clears cooldown after confirmed routed delivery.
+- Full Route State Contract run 35970470639 passed all 22 functional/check steps including syntax, route/signal/prompt/repeat tests, structural cooldown test, storage/backpressure contract, integration guard, and rebuildability.
+- README now documents cooldown semantics and the expanded verification suite.
+- Real ChatGPT browser smoke is still NOT claimed; no interactive unpacked-extension Chrome surface is attached to this runtime.
 
 NEXT_ACTION=
-1. Normalize cooldown storage semantics: honor `cooldownEnabled === false` in both response and interval runners; choose one canonical attempt field (prefer compatibility with existing `cooldownStep`) and migrate/read legacy/new field safely. Ensure popup disable/start/stop resets the same canonical cooldown fields used by content runtime.
-2. Add deterministic storage-transition tests covering disabled cooldown, first/second ladder attempts, due gating, success reset, and legacy-field migration. Do not weaken the structural-only boundary test.
-3. Re-run the full Route State Contract workflow and inspect individual steps, not merely workflow existence.
-4. Inspect dashboard presentation of cooldown/attention state and expose structural cooldown status without storing/rendering chat prose if a small coherent improvement fits the package.
-5. Attempt real browser smoke only if an actual browser/extension execution surface is available. Required evidence: unpacked extension loads, target ChatGPT tab is found, composer/send strong receipt works, and one response or interval repeat completes. If unavailable, keep this as an explicit release blocker; never simulate it with static CI.
-6. Do not generate a final release ZIP until browser smoke and cooldown compatibility gates pass.
+1. Repair the known four numeric clamp/default regressions in `popup.js` using a safe exact method; verify resulting content against the recovered target expectations instead of doing unsafe whole-file replacement. Preserve all newer intentional popup behavior if byte-exact target replacement would discard it; if so, treat v0.8.7 semantics as authoritative and add explicit regression tests for the clamps.
+2. Strengthen deterministic tests around popup start/stop/disable cooldown resets and content success reset. Remove legacy `cooldownAttempt` only when migration behavior is proven safe for already-stored targets.
+3. Inspect dashboard cooldown/attention presentation; add a compact structural cooldown indicator/countdown only if it improves operator diagnosis without chat semantic content.
+4. Re-run full CI and inspect every step after any release-gate changes.
+5. Attempt real browser smoke only if an actual Chrome/extension execution surface becomes available. Required evidence remains: unpacked extension load, exact target tab resolution, composer/send strong receipt, one response or interval repeat, and no semantic-content monitoring. Never substitute static CI for this gate.
+6. Do not generate/finalize release ZIP until the static popup gate and real browser gate are both satisfied.
 
 DONE_CRITERIA=
-- cooldownEnabled and cooldown attempt/reset fields are consistent across popup/content/repeat policy.
-- deterministic cooldown storage/runtime tests and existing structural semantic-boundary tests pass.
-- full CI/integration/rebuildability gates pass on the compatibility revision.
-- browser smoke is either real and recorded or remains an explicit release blocker.
-- next baton is another ~14 useful minutes unless genuinely externally gated.
+- popup numeric safety regression is repaired and regression-tested without losing intentional v0.8.7 behavior.
+- cooldown reset/migration semantics have deterministic coverage.
+- full CI/integration/rebuildability remains green.
+- browser smoke is either real and recorded or explicitly remains the release blocker.
+- next baton remains ~14 useful minutes unless genuinely externally gated.
 
 DO_NOT_REPEAT=
-- popup.js 53-byte diagnosis or unsafe whole-file replacement
-- invented claim that static CI proves live ChatGPT DOM selectors
+- unsafe whole-file popup replacement
+- invented claim that static CI proves live ChatGPT selectors
 - semantic parsing of assistant/user prose for rate-limit detection
 - duplicate prompt/repeat/route-state implementations
-- treating prearm save as proof of successor wake
+- treating scheduler prearm save as proof of successor wake
 
 BLOCKER=
-Real ChatGPT browser smoke remains a release gate and requires an actual browser/extension execution surface. Exact later v0.8.6 runtime bytes remain unavailable, so reconstruction remains deliberately v0.8.7.
+Real ChatGPT browser smoke requires an actual browser/extension execution surface and remains a release gate. Exact later v0.8.6 runtime bytes remain unavailable, so reconstruction remains deliberately v0.8.7.
 
 SCHEDULER_RULE=
 Preferred/default NEXT_WAKE_DELAY_MINUTES=14. Shorter is exceptional and requires concrete unavoidable SHORT_PACKAGE_REASON.
