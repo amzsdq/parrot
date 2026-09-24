@@ -37,9 +37,26 @@ The record is the trust anchor; `.ready`, provenance, and other sidecars remain 
 
 For the public `amzsdq/parrot` repository, GitHub Artifact Attestations are a suitable M7 implementation candidate because GitHub Actions can create signed build provenance for file subjects and consumers can cryptographically verify attestation signatures and signer/repository identity. The implementation should not be enabled before M6 PASS.
 
-A minimal implementation should make the publication record itself the attested subject (or use a custom release predicate that carries the same three values), then require consumer verification of the attestation's signature and expected `amzsdq/parrot` repository identity before extracting the three trusted fields. Attesting only the ZIP is insufficient because the tested sidecar-forgery boundary requires an independently authenticated `ready_sha256` as well.
+A minimal implementation should make the publication record itself the attested subject. Attesting only the ZIP is insufficient because the tested sidecar-forgery boundary requires an independently authenticated `ready_sha256` as well.
 
-Do not treat merely fetching an attestation JSON document as verification. Signature/timestamp and signer identity must be cryptographically verified by the consumer (for example with GitHub CLI attestation verification) before the record becomes trusted input.
+Do not treat merely fetching an attestation JSON document as verification. Signature/timestamp and signer identity must be cryptographically verified by the consumer.
+
+## Consumer adapter contract
+
+The pre-M6 adapter `scripts/verify-trusted-publication.sh` defines the intended consumer boundary without creating an attestation. It first fail-closed parses the exact record bytes, then invokes GitHub CLI attestation verification on that same file path. This is important: GitHub CLI computes/verifies the supplied file as the attestation subject, so a valid attestation for a different record cannot be substituted.
+
+The adapter pins all independently meaningful identities available from GitHub CLI:
+
+```text
+--repo amzsdq/parrot
+--signer-repo amzsdq/parrot
+--predicate-type https://slsa.dev/provenance/v1
+--source-digest <release_repo_sha parsed from the exact record>
+```
+
+`--repo` constrains the repository associated with the attestation lookup/identity; `--signer-repo` constrains the signing workflow repository; `--predicate-type` prevents accepting an unrelated claim type; and `--source-digest` binds the cryptographically verified provenance source commit to the same release repository SHA that the record claims. The parsed identities are emitted only after `gh attestation verify` succeeds.
+
+For the eventual M7 workflow, pin a specific signer workflow (or signer digest) as well once the release workflow path is finalized. Repository-only signer pinning is the safe pre-workflow minimum, not the final strongest policy.
 
 ## Publication ordering
 
@@ -50,9 +67,9 @@ Do not treat merely fetching an attestation JSON document as verification. Signa
 5. Construct the v1 publication record from the frozen repository SHA and those two digests.
 6. Sign/attest that exact record through the trusted publication channel.
 7. Publish release assets and the verifiable record/attestation.
-8. Consumer first verifies the publication record's signature + expected repository/signer identity, then supplies the three authenticated values to `verify-release-ready.sh`.
+8. Consumer verifies the exact record file with repository, signer, predicate, and source-commit policy, then supplies the three authenticated values to `verify-release-ready.sh`.
 
-A release must fail closed if the trusted record is absent, its signature/signer identity cannot be verified, any field is missing/duplicated/malformed, or the three values do not match the downloaded release component set.
+A release must fail closed if the trusted record is absent, its signature/signer identity cannot be verified, any field is missing/duplicated/malformed, the attested subject is not the exact record bytes, the verified provenance source commit differs from `release_repo_sha`, or the three values do not match the downloaded release component set.
 
 ## Explicit non-goals
 
@@ -60,4 +77,4 @@ A release must fail closed if the trusted record is absent, its signature/signer
 - It does not create or publish a GitHub Release.
 - It does not change `extension/` bytes.
 - It does not add more self-authenticating hashes inside the unsigned bundle; those cannot create a trust root.
-- It does not require an attestation implementation now. Implementation belongs after M6 PASS or when a release-publication workflow can be exercised without making a release claim.
+- It does not generate an attestation before M6 PASS; the adapter is exercised with a fake `gh` boundary in regression tests only.
