@@ -1,12 +1,12 @@
 # Parrot v0.8.7 live browser smoke checklist
 
-This gate requires a real Chromium/Chrome instance with the exact candidate `extension/` loaded unpacked. Static CI/source inspection/mocks/Actions do not satisfy it.
+This gate requires a real Chromium/Chrome instance with the exact candidate `extension/` loaded unpacked and an authenticated real ChatGPT session. Static CI/source inspection/mocks/Actions do not satisfy it.
 
 ## Evidence rules
-For every case record browser version, exact extension commit SHA, target ChatGPT URL/worker label, UTC timestamp, PASS/FAIL, and structural evidence observed. Never copy/persist assistant/user prose as evidence. Use harmless bounded prompts. Do not manufacture rate limits or duplicate real messages.
+For every case record browser version, exact extension commit SHA, target ChatGPT URL/worker label, UTC timestamp, PASS/FAIL, and structural evidence observed. Before any case can PASS, record that the ChatGPT session is authenticated using non-secret structural UI evidence (for example account/avatar/menu presence). Never record account identity, cookies, tokens, credentials, or assistant/user prose. Use harmless bounded prompts. Do not manufacture rate limits or duplicate real messages.
 
 ## S1 — unpacked load / control plane
-PASS only if extension loads without manifest/service-worker/content-script errors, popup/dashboard open, and a real `https://chatgpt.com/*` tab is structurally visible.
+PASS only if extension loads without manifest/service-worker/content-script errors, popup/dashboard open, an authenticated real `https://chatgpt.com/*` session is structurally confirmed, and a real ChatGPT tab is structurally visible.
 
 ## S2 — exact target + dashboard control
 Register at least two different open ChatGPT conversations. Keep Dashboard active. From Dashboard Start worker A without activating A's ChatGPT tab; verify only exact normalized A target runs. Stop A from Dashboard and verify storage/content reconciliation fences it. Start B separately and verify no first-tab fallback/cross-target send. Closed target must not offer/send Start and must never route elsewhere.
@@ -39,4 +39,4 @@ Only when genuine rate-limit/transient structural error naturally occurs. PASS o
 Use enough registered workers to exercise search/filter and at least two pages (10/page is sufficient). PASS only if search/filter/pagination remain usable, Attention surfaces structural error/cooldown/discarded/frozen states, Start/Stop/Retry/Resolve feedback is visibly rendered, popup opens without unintended default vertical scrolling at normal extension-popup viewport, and advanced editors appear as overlays rather than expanding/clipping the default form.
 
 ## Release decision
-Browser gate PASS requires S1–S8 and S11 PASS. S9 ambiguity and S10 cooldown may be NOT_OBSERVED only when they cannot be safely/naturally produced; each NOT_OBSERVED item remains an explicit release limitation rather than being silently treated as PASS. Any observed FAIL reopens the affected earlier milestone. Final release ZIP is produced only after browser decision is recorded against exact candidate SHA; the M5 candidate artifact remains NON-RELEASE.
+Browser gate PASS requires authenticated-session structural provenance plus S1–S8 and S11 PASS. S9 ambiguity and S10 cooldown may be NOT_OBSERVED only when they cannot be safely/naturally produced; each NOT_OBSERVED item remains an explicit release limitation rather than being silently treated as PASS. Any observed FAIL reopens the affected earlier milestone. Final release ZIP is produced only after browser decision is recorded against exact candidate SHA; the M5 candidate artifact remains NON-RELEASE.
