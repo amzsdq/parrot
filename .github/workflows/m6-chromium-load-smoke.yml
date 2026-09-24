@@ -53,7 +53,7 @@ jobs:
       - name: Query real ChatGPT tab from candidate Dashboard
         run: |
           DASH_WS=$(cat "$RUNNER_TEMP/dashboard-ws")
-          node scripts/cdp-eval.mjs "$DASH_WS" "(async()=>{const tabs=await chrome.tabs.query({});return tabs.filter(t=>String(t.url||'').startsWith('https://chatgpt.com/')).map(t=>({id:t.id,url:t.url,active:t.active,discarded:t.discarded}));})()" | tee "$RUNNER_TEMP/dashboard-tabs.json"
+          node scripts/cdp-eval.mjs "$DASH_WS" "(async()=>{const tabs=await new Promise((resolve,reject)=>chrome.tabs.query({},x=>chrome.runtime.lastError?reject(new Error(chrome.runtime.lastError.message)):resolve(x)));return tabs.filter(t=>String(t.url||'').startsWith('https://chatgpt.com/')).map(t=>({id:t.id,url:t.url,active:t.active,discarded:t.discarded}));})()" | tee "$RUNNER_TEMP/dashboard-tabs.json"
           grep -F 'chatgpt.com' "$RUNNER_TEMP/dashboard-tabs.json"
           echo 'PASS: candidate Dashboard structurally enumerates a real ChatGPT tab without chat-prose access.'
       - name: Cleanup
