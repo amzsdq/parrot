@@ -5,25 +5,39 @@ Status: reconstruction evidence; not a release certification.
 ## Source under test
 
 - `extension/route-state.js`
+- `extension/route-queue.js`
 - `tests/route-state-contract.json`
 - `scripts/test-route-state.mjs`
+- `scripts/test-route-queue.mjs`
 - `.github/workflows/route-state-contract.yml`
 
-The model is deliberately semantic-content blind. It accepts only route status, structural send receipt evidence, timestamps/ids, and structural tab properties.
+The model is deliberately semantic-content blind. Ambiguity receipts are sanitized to an allowlist of structural fields before queue/outbox persistence; unapproved fields such as message text are discarded.
 
 ## Deterministic evidence
 
-Local Node/vm execution passed focused checks for user-count/generation strong receipts, composer-only ambiguity, ambiguity auto-dispatch fencing, manual retry/resolve, discarded/frozen/unsupported-frozen structural states, active-preserving pruning, and bounded idempotent ambiguity-outbox operations.
+Initial route-state CI run `35957380718` succeeded. After adding the route-queue integration layer, CI exposed a real syntax regression in the new test runner (`resolve` binding collision with `node:path`). The runner was corrected rather than bypassed.
 
-GitHub Actions then executed the repository-native runner on commit `badbb1d28b14682a183cabd0773ec51a5384d360` in workflow run `35957380718` (`Route State Contract`). The run completed successfully on 2026-09-24T04:50:59Z. The workflow performs `node --check extension/route-state.js`, `node --check scripts/test-route-state.mjs`, and `node scripts/test-route-state.mjs` on an Ubuntu runner with Node 22. This upgrades the route-state primitive from source-only evidence to repository-native deterministic execution evidence.
+GitHub Actions run `35957550973` on commit `795773a648ed6e25ddafe17429767b5a1fb85c49` then completed successfully. Its workflow syntax-checks both runtime primitives and both runners, executes the route-state contract vectors, and executes route-queue integration tests proving:
 
-The workflow is path-scoped to the primitive, vectors, runner, and workflow itself; it does not claim the still-incomplete extension source tree is release-ready.
+- periodic processing dispatches pending only;
+- ambiguity reconciliation is state-only and does not dispatch;
+- manual retry creates exactly one explicit dispatch call;
+- manual resolve is terminal without dispatch;
+- strong receipt can mark delivered;
+- ambiguity persistence strips unapproved/semantic fields;
+- state/outbox/pruning/structural-tab vectors remain green.
+
+This is repository-native execution evidence on GitHub's Ubuntu runner with Node 22. It does not claim the still-incomplete extension source tree is release-ready.
 
 ## Recovered v0.8.0 integration seams
 
 Recovered v0.8.0 `background.js` periodically dispatches every route record except `delivered`; this must become pending-only dispatch. Recovered v0.8.0 `content.js` accepts generation start, composer cleared, or composer changed as send receipt; composer-only signals must no longer prove delivery. A send attempt without a strong structural receipt must persist an ambiguity receipt before transient background notification and locally fence that queue id.
 
-The selected loading strategy for v0.8.7 is one canonical browser-global `route-state.js`: classic MV3 background uses `importScripts('route-state.js')`, while content scripts load the same file before `content.js`. This avoids two hand-maintained state-machine copies and is supported by Chrome's documented service-worker script import modes.
+The selected loading strategy for v0.8.7 is one canonical browser-global `route-state.js`: classic MV3 background uses `importScripts('route-state.js', 'route-queue.js')`, while content scripts load `route-state.js` before `content.js`. This avoids two hand-maintained state-machine copies and is supported by Chrome's documented service-worker script import modes.
+
+## Handoff-log durability
+
+`.github/workflows/mirror-baton-log.yml` now mirrors each unseen latest `docs/BATON.md` snapshot into `docs/DEVELOPMENT_LOG.md` append-only, keyed by `WORK_PACKAGE_ID`. Its first run successfully appended `PARROT-BATON-004`, eliminating the connector's full-file-replacement append hazard for future handoffs.
 
 ## Exact popup evidence
 
