@@ -36,6 +36,10 @@ Phase: PLAN
 - M7-C5 UNVERIFIED — PROGRAM_COMPLETE only after durable evidence.
 Preparation: `docs/RELEASE_NOTES_DRAFT.md`, README candidate install/limitations, candidate-bound live evidence verifier, and fail-closed final release builder are ready. Obsolete BATON mirror workflow was removed after the BATON layer was retired. No final release claim before M6.
 
+M7 preparation evidence / open verification:
+- Live-result verifier now checks case-row evidence plus decision-summary consistency, UTC decision time, and explicit limitation text when S9/S10 is NOT_OBSERVED. Initial CI exposed that the verifier self-test fixture did not include the newly required Decision section; test fixture was corrected at head `49a9da4fecdc9afa2fd99bc45fba311cebe3246b` and its exact-head CI must be green before treating this hardening as verified.
+- Final release builder previously passed the current repository HEAD as the expected M6 candidate SHA, which would incorrectly reject valid live evidence after docs/release-tooling-only commits (or tempt an unsafe rebinding). It now treats `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691` as the M6 candidate identity, verifies live evidence against that candidate, and fail-closes if current `extension/` differs from the candidate tree. Any extension change after M6 candidate creation requires a new candidate and fresh M6. Final provenance sidecar records candidate SHA + release-repository SHA.
+
 ## Completed milestone evidence summary
 - M0: ChatGPT-first, structural-only status/signals, milestone-only control model.
 - M1: exact target, strong receipt, ambiguity fail-closed + Retry/Resolve, structural signal dedupe.
