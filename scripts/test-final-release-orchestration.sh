@@ -38,7 +38,10 @@ LIVE_ARG=$(grep '^live-evidence|' "$LOG" | cut -d'|' -f2- | awk '{print $1}')
 PROV_RESULT_ARG=$(grep '^provenance|' "$LOG" | awk -F'|' '{print $2}' | awk '{print $4}')
 [[ "$LIVE_ARG" != "$RESULT" ]] || { echo 'FAIL: mutable caller result passed directly' >&2; exit 1; }
 [[ "$PROV_RESULT_ARG" == "$OUT.live-result.txt" ]] || { echo 'FAIL: provenance does not name durable evidence sidecar' >&2; exit 1; }
-cmp -s "$LIVE_ARG" "$PROV_RESULT_ARG" || { echo 'FAIL: durable evidence bytes differ from verified immutable snapshot' >&2; exit 1; }
+# The verifier snapshot is intentionally ephemeral and is deleted when the builder exits.
+# In this non-mutating success case, the durable sidecar must therefore equal the caller bytes;
+# the dedicated TOCTOU case below proves that mutation after snapshot does not change it.
+cmp -s "$RESULT" "$PROV_RESULT_ARG" || { echo 'FAIL: durable evidence bytes differ from verified input in non-mutating build' >&2; exit 1; }
 
 install_success_stubs; : > "$LOG"; printf 'original evidence\n' > "$RESULT"; export PARROT_MUTABLE_RESULT=$RESULT
 stub scripts/verify-candidate-live-evidence.sh live-evidence 'printf "changed after snapshot\n" > "$PARROT_MUTABLE_RESULT"; echo "PASS: fake candidate-bound evidence"'
