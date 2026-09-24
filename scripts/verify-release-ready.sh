@@ -3,9 +3,11 @@ set -euo pipefail
 
 OUT=${1:?usage: verify-release-ready.sh <release.zip>}
 READY="$OUT.ready"
+EVIDENCE="$OUT.live-result.txt"
 EXPECTED_CANDIDATE=f51e4ba53753dade3bd3f9a64e2b3c50ca05d691
+SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 
-for path in "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt" "$READY"; do
+for path in "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt" "$EVIDENCE" "$READY"; do
   [[ -f "$path" ]] || { echo "FAIL: publish-ready component missing: $path" >&2; exit 1; }
 done
 
@@ -17,7 +19,6 @@ read_one() {
   [[ -n "$value" ]] || { echo "FAIL: ready marker has empty $key" >&2; exit 1; }
   printf '%s' "$value"
 }
-
 read_provenance_one() {
   local key=$1 count value
   count=$(grep -c "^${key}=" "$OUT.provenance.txt" || true)
@@ -32,14 +33,14 @@ ARTIFACT_SHA=$(sha256sum "$OUT" | awk '{print $1}')
 CHECKSUM_SHA=$(sha256sum "$OUT.sha256" | awk '{print $1}')
 FILE_LIST_SHA=$(sha256sum "$OUT.files.txt" | awk '{print $1}')
 PROVENANCE_SHA=$(sha256sum "$OUT.provenance.txt" | awk '{print $1}')
+EVIDENCE_SHA=$(sha256sum "$EVIDENCE" | awk '{print $1}')
 
 [[ "$(read_one artifact_sha256)" == "$ARTIFACT_SHA" ]] || { echo 'FAIL: ready marker artifact hash mismatch' >&2; exit 1; }
 [[ "$(read_one checksum_sha256)" == "$CHECKSUM_SHA" ]] || { echo 'FAIL: ready marker checksum sidecar hash mismatch' >&2; exit 1; }
 [[ "$(read_one file_list_sha256)" == "$FILE_LIST_SHA" ]] || { echo 'FAIL: ready marker file-list hash mismatch' >&2; exit 1; }
 [[ "$(read_one provenance_sha256)" == "$PROVENANCE_SHA" ]] || { echo 'FAIL: ready marker provenance hash mismatch' >&2; exit 1; }
+[[ "$(read_one live_evidence_sha256)" == "$EVIDENCE_SHA" ]] || { echo 'FAIL: ready marker live-evidence hash mismatch' >&2; exit 1; }
 
-# Revalidate semantics, not only bytes. A self-consistent .ready must not make a
-# non-ZIP artifact or forged sidecars/provenance consumable.
 unzip -t "$OUT" >/dev/null || { echo 'FAIL: publish-ready artifact is not a valid ZIP' >&2; exit 1; }
 EXPECTED_LIST=$(mktemp)
 trap 'rm -f -- "$EXPECTED_LIST"' EXIT
@@ -57,9 +58,12 @@ PROVENANCE_ARTIFACT_SHA=$(read_provenance_one artifact_sha256)
 LIVE_RESULT_SHA=$(read_provenance_one live_result_sha256)
 [[ "$CANDIDATE_SHA" == "$EXPECTED_CANDIDATE" ]] || { echo 'FAIL: provenance is not bound to exact M5/M6 candidate' >&2; exit 1; }
 [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo 'FAIL: provenance release_repo_sha is not a full commit identity' >&2; exit 1; }
-[[ "$LIVE_RESULT_SHA" =~ ^[0-9a-f]{64}$ ]] || { echo 'FAIL: provenance live_result_sha256 is not a SHA256 identity' >&2; exit 1; }
+[[ "$LIVE_RESULT_SHA" == "$EVIDENCE_SHA" ]] || { echo 'FAIL: provenance live-result identity does not match durable evidence bytes' >&2; exit 1; }
 [[ "$PROVENANCE_ARTIFACT_SHA" == "$ARTIFACT_SHA" ]] || { echo 'FAIL: provenance is not bound to artifact' >&2; exit 1; }
+
+# Durable evidence must remain semantically valid, not merely hash-consistent.
+bash "$SCRIPT_DIR/verify-candidate-live-evidence.sh" "$EVIDENCE" "$EXPECTED_CANDIDATE" >/dev/null || { echo 'FAIL: durable live evidence no longer passes candidate-bound verification' >&2; exit 1; }
 
 trap - EXIT
 rm -f -- "$EXPECTED_LIST"
-echo "PASS: publish-ready marker and all release components remain mutually, semantically, and candidate-identity bound."
+echo "PASS: publish-ready release and durable live evidence remain mutually, semantically, and candidate-identity bound."
