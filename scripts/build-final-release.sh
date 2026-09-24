@@ -6,7 +6,10 @@ OUT=${3:-parrot-release.zip}
 NOTES=${4:-docs/RELEASE_NOTES_DRAFT.md}
 RELEASE_SHA=$(git rev-parse HEAD)
 
-bash scripts/prepare-release-output.sh "$OUT"
+# Invalidate the only publishability marker synchronously before any delegated
+# helper runs. The complete stale-output cleanup is then executed from frozen
+# RELEASE_SHA tooling below.
+rm -f -- "$OUT.ready"
 cleanup_failed_release() {
   local rc=$?
   rm -f -- "$OUT.ready" "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt"
@@ -25,10 +28,8 @@ cleanup_snapshots() {
 trap cleanup_snapshots EXIT
 
 # Freeze committed release tooling and notes before trusting any downstream
-# helper. The frozen verifier then proves the mutable working tree matched the
-# same RELEASE_SHA at the freeze boundary. Every later helper executes only
-# from this snapshot, so post-verification worktree edits cannot change the
-# release logic or notes consumed by limitation checks.
+# helper. The frozen verifier proves the mutable worktree matched RELEASE_SHA
+# at this boundary; every later helper executes only from this snapshot.
 if [[ ${PARROT_TEST_USE_WORKTREE_TOOLING:-0} == 1 ]]; then
   TOOL_ROOT=.
 else
@@ -37,6 +38,7 @@ else
 fi
 run_tool() { bash "$TOOL_ROOT/scripts/$1" "${@:2}"; }
 
+run_tool prepare-release-output.sh "$OUT"
 run_tool verify-release-worktree.sh "$NOTES"
 run_tool verify-release-preflight.sh "$CANDIDATE_SHA"
 
@@ -50,7 +52,6 @@ VERSION=$(node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync(pro
 echo "Verifying live browser evidence for candidate $CANDIDATE_SHA"
 GATE_OUTPUT=$(run_tool verify-candidate-live-evidence.sh "$RESULT_SNAPSHOT" "$CANDIDATE_SHA")
 echo "$GATE_OUTPUT"
-
 echo "PASS: release extension tree is identical to M6 candidate $CANDIDATE_SHA (release repo $RELEASE_SHA)"
 
 GATE_OUTPUT_FILE=$(mktemp)
