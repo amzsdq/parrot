@@ -9,10 +9,14 @@ The v0.8.0 artifact is now recoverable and gives authoritative historical source
 ## Evidence
 
 Recovered v0.8.0 behavior:
-- background queue has `pending` / `delivered` and redispatches any non-delivered item after `ROUTE_REDISPATCH_MS`;
-- content script sends `PARROT_ROUTE_DELIVERED` after dispatch receipt;
-- no durable ambiguity outbox was found in v0.8.0;
+- background queue has `pending` / `delivered` and periodic processing redispatches any non-delivered item after `ROUTE_REDISPATCH_MS`;
+- content `tryDeliverRoute()` clicks send and `waitForDispatchReceipt()` accepts `isGenerating()`, composer-cleared, or composer-changed as receipt;
+- content then emits `PARROT_ROUTE_DELIVERED`; failure to notify background is swallowed locally;
+- no durable ambiguity outbox was found;
 - v0.8.0 dashboard has no ambiguity retry/resolve controls.
+
+Later-source clue already exact in repository:
+- v0.8.6 `chatgpt-adapter.js` adds `getUserMessageCount()` relative to recovered v0.8.0. This directly supports replacing weak composer-cleared/changed receipt inference with user-message-count/generation structural evidence.
 
 Verified v0.8.6 contract from durable checkpoint:
 - normal repeat-send and WAKE/MESSAGE delivery use strong structural receipts;
@@ -30,7 +34,6 @@ Verified v0.8.6 contract from durable checkpoint:
 pending
   -> delivered          strong receipt
   -> ambiguous          send attempted but strong receipt not confirmed
-  -> pending            explicit manual retry only
 
 ambiguous
   -> pending            explicit manual retry
@@ -47,17 +50,18 @@ Hard rule: `ambiguous` is not a retry state. Periodic queue processing must skip
 
 1. Start from recovered v0.8.0 content source, not prose.
 2. Keep provider access behind `globalThis.ParrotSiteAdapter`.
-3. For each route send, capture structural pre-send evidence (at minimum user-message count and generation state).
-4. Set composer text and click send.
-5. Strong receipt succeeds only when structural post-send evidence changes: new user-message DOM or assistant generation begins. Click return alone is insufficient.
-6. If send was attempted but receipt cannot be confirmed, create an ambiguity receipt object.
-7. BEFORE sending transient `chrome.runtime.sendMessage` about ambiguity, persist that receipt in bounded `chrome.storage.local` outbox.
-8. Background acknowledgement may clear/mark the outbox item; failure to notify background must not erase ambiguity evidence.
-9. Do not parse assistant semantic text for route delivery.
+3. Before route send, capture `beforeUserCount = siteAdapter.getUserMessageCount()` and generation state.
+4. Set composer text, obtain enabled send button, click once.
+5. Strong receipt succeeds only if post-send structural evidence proves acceptance: user-message count increases OR assistant generation begins. Composer clearing/changing alone is not sufficient.
+6. If the click/send attempt occurred but strong receipt times out, create an ambiguity receipt containing queue id and structural/timing metadata only; never chat semantics.
+7. BEFORE transient `chrome.runtime.sendMessage` about ambiguity, persist that receipt in a bounded `chrome.storage.local` outbox.
+8. Background acknowledgement may remove/mark the outbox record. Notification failure must leave durable evidence for later reconciliation.
+9. Locally fence the queue id after an ambiguous send so the content retry timer cannot click/send it again.
+10. Do not parse assistant semantic text for route delivery.
 
 ## background.js reconstruction
 
-1. Add durable route receipt outbox reconciliation message handling.
+1. Add durable route receipt reconciliation message handling.
 2. Queue states include at least `pending`, `ambiguous`, `delivered`, `resolved`.
 3. Periodic queue processing may dispatch only eligible `pending` records. Never automatically redispatch `ambiguous`, `resolved`, or `delivered`.
 4. Reconciliation of a persisted ambiguity receipt updates queue state only; it never sends the route again.
@@ -84,18 +88,19 @@ Hard rule: `ambiguous` is not a retry state. Periodic queue processing must skip
 ## Regression gates before release
 
 Required deterministic tests:
-1. pending -> delivered on strong receipt.
-2. attempted send + no receipt -> ambiguous.
-3. ambiguous survives transient background-message failure through persisted outbox.
-4. background reconciliation of ambiguity changes state without redelivery.
-5. periodic processor never dispatches ambiguous.
-6. manual retry performs one authorized attempt and can become delivered or ambiguous again.
-7. manual resolve -> resolved and no future dispatch.
-8. pruning with 1 pending + 250 delivered + 250 resolved retains 300 total, keeps active, keeps newest terminal.
-9. 320 active records retain all 320.
-10. dashboard pagination/search/filter and ambiguity controls operate on the intended queue item.
-11. `node scripts/verify-repo.mjs` passes.
-12. manifest parse/version, ZIP integrity, and real ChatGPT selector/receipt smoke test pass.
+1. pending -> delivered when user-message count increases.
+2. pending -> delivered when assistant generation begins even if count update lags.
+3. composer clears/changes without either strong signal -> ambiguous, not delivered.
+4. ambiguous survives transient background-message failure through persisted outbox.
+5. background reconciliation of ambiguity changes state without redelivery.
+6. periodic processor never dispatches ambiguous.
+7. manual retry performs one authorized attempt and can become delivered or ambiguous again.
+8. manual resolve -> resolved and no future dispatch.
+9. pruning with 1 pending + 250 delivered + 250 resolved retains 300 total, keeps active, keeps newest terminal.
+10. 320 active records retain all 320.
+11. dashboard pagination/search/filter and ambiguity controls operate on the intended queue item.
+12. `node scripts/verify-repo.mjs` passes.
+13. manifest parse/version, ZIP integrity, and real ChatGPT selector/receipt smoke test pass.
 
 ## Version rule
 
