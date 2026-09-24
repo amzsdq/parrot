@@ -87,6 +87,8 @@ Hard rule: `ambiguous` is not a retry state. Periodic queue processing must skip
 
 ## Regression gates before release
 
+`tests/route-state-contract.json` now records the deterministic contract vectors. It is specification evidence only until production code is wired to a runner; do not report it as passing production tests merely because the JSON exists.
+
 Required deterministic tests:
 1. pending -> delivered when user-message count increases.
 2. pending -> delivered when assistant generation begins even if count update lags.
