@@ -39,7 +39,7 @@
 - A real observed product FAIL reopens the relevant earlier milestone and invalidates release readiness until corrected and retested.
 
 ## Release provenance rule
-M6 validates the exact candidate **extension tree**. Documentation and release-tooling commits may occur afterward, but `extension/` must remain byte-for-byte Git-equivalent to candidate `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`. `scripts/build-final-release.sh` fails closed if `extension/` differs. Any later extension change requires a new candidate and fresh M6 validation. The final artifact records both the M6 candidate SHA and the release-repository SHA in its provenance sidecar.
+M6 validates the exact candidate **extension tree**. Documentation and release-tooling commits may occur afterward, but `extension/` must remain byte-for-byte Git-equivalent to candidate `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`. `scripts/build-final-release.sh` fails closed if `extension/` differs. Any later extension change requires a new candidate and fresh M6 validation. The final artifact provenance sidecar records the M6 candidate SHA, release-repository SHA, and SHA-256 of the exact authenticated live-result file consumed by the builder so the shipped artifact can be tied back to its browser evidence.
 
 ## Final release checklist — intentionally open
 - [ ] Authenticated real Chrome + ChatGPT result file exists and is candidate-SHA-bound, with non-secret structural authentication evidence.
@@ -51,7 +51,7 @@ M6 validates the exact candidate **extension tree**. Documentation and release-t
 - [ ] Final release repository SHA is frozen and recorded.
 - [ ] `extension/` is unchanged from the exact M6 candidate SHA; otherwise create a new candidate and repeat M6.
 - [ ] `scripts/build-final-release.sh` is run with the verified live-result file and exact M6 candidate SHA.
-- [ ] Final release ZIP integrity test passes; file list, SHA-256, candidate SHA, and release-repository SHA are recorded.
+- [ ] Final release ZIP integrity test passes; file list, SHA-256, candidate SHA, release-repository SHA, and live-result SHA-256 are recorded.
 - [ ] README install/use instructions match final behavior and artifact identity.
 - [ ] Limitations reflect S9/S10 observation status and deferred provider adapters.
 - [ ] M7 evidence is durable and independently reconstructable; only then PROGRAM_COMPLETE.
