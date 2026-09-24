@@ -6,26 +6,19 @@ ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 �
 
 ## Current version
 
-`v0.8.5`
+`v0.8.6`
 
-### Fleet dashboard scaling
+## Current capabilities
 
-- Worker identity는 `A`, `B`, `C` … `Z`, `AA` … 식으로 확장됩니다. 5개 제한이 없습니다.
-- Worker table은 검색/상태 필터에 더해 10/25/50개 단위 pagination을 제공합니다.
-- 기본 페이지 크기는 25입니다.
-- Chrome 탭의 `discarded` / `frozen` 상태를 일반 연결 실패와 구분합니다.
+- Worker identity: `A`, `B`, `C` … `Z`, `AA` …; fixed five-worker limit 없음.
 - Dashboard는 활성 ChatGPT 탭에 종속되지 않는 extension control plane입니다.
-- Live dashboard는 채팅 본문을 의미 분석하지 않고 탭/DOM의 구조적 신호만 사용합니다.
-
-### Reliability: strong + durable dispatch receipts
-
-- 일반 반복 전송과 WAKE/MESSAGE route delivery 모두 `sendButton.click()` 반환만으로 성공 처리하지 않습니다.
-- 성공 receipt는 새 user-message DOM 또는 assistant generation 시작만 인정합니다.
-- composer clear/change는 성공 증거로 인정하지 않습니다.
-- 일반 반복 전송에서 5초 안에 강한 receipt가 없으면 `dispatch_unconfirmed`로 기록하고 `sentCount`를 증가시키지 않습니다.
-- WAKE/MESSAGE에서 클릭 후 5초 안에 강한 receipt가 없으면 `dispatch_ambiguous`로 격리합니다. 실제 전송이 성공했을 가능성이 있으므로 자동 재전송하지 않습니다.
-- ambiguous route는 Dashboard에서만 명시적으로 `재시도` 또는 `해결 처리`할 수 있습니다.
-- v0.8.5부터 ambiguity receipt는 background messaging 전에 `chrome.storage.local`의 bounded outbox에 먼저 기록됩니다. 서비스 워커가 그 순간 재시작/비가용이어도 다음 background reconciliation이 route를 `ambiguous`로 fence하며, 자동 재전송하지 않습니다.
+- 검색/상태 필터와 10/25/50 pagination을 지원합니다.
+- `discarded` / `frozen` 탭을 일반 연결 실패와 구분합니다.
+- Live dashboard는 채팅 본문을 의미 분석하지 않고 구조적 상태만 사용합니다.
+- 일반 반복 전송과 WAKE/MESSAGE delivery는 click 반환이 아니라 새 user-message DOM 또는 assistant generation 시작을 strong receipt로 사용합니다.
+- receipt가 확인되지 않은 route는 `ambiguous`로 fence하고 자동 재전송하지 않습니다.
+- ambiguity receipt는 background messaging 전에 bounded `chrome.storage.local` outbox에 기록됩니다.
+- v0.8.6은 `delivered`뿐 아니라 수동 `resolved` route도 terminal history budget에 포함해 durable route queue의 무제한 성장을 막습니다.
 
 ## Protocol
 
@@ -67,3 +60,7 @@ https://parrot.invalid/message/<sourceRunId>/<eventId>?to=<targetRouteId>&ref=<r
 - COMPLETE via `parrot.invalid` runId exact link
 - WAKE / MESSAGE routing without semantic chat reading
 - external UX/API references before major UI or architecture changes
+
+## Source status
+
+GitHub source-of-truth migration is in progress. `extension/manifest.json` is now synchronized to the v0.8.6 artifact, but the full v0.8.6 package has not yet been committed/rebuilt solely from repository source. See `docs/DEVELOPMENT_CHECKPOINT.md`.
