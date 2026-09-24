@@ -9,6 +9,10 @@ cd "$TMP/repo"
 
 LOG=$TMP/calls.log
 export PARROT_TEST_LOG=$LOG
+# This orchestration suite replaces helpers with executable stubs to exercise
+# failure propagation. Production never sets this; tooling-freeze behavior is
+# covered separately by test-release-tooling-snapshot.sh.
+export PARROT_TEST_USE_WORKTREE_TOOLING=1
 
 stub() {
   local path=$1 name=$2 body=${3:-}
