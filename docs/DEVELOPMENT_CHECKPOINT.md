@@ -8,8 +8,11 @@ Immediate continuation is now split from historical logging:
 - `docs/DEVELOPMENT_LOG.md` = append-only history of full baton snapshots.
 - Every handoff writes the same next-baton snapshot to BOTH places: replace BATON with the newest snapshot, append that snapshot to DEVELOPMENT_LOG.
 - Each baton carries `EXPECTED_ACTIVE_MINUTES` and `NEXT_WAKE_DELAY_MINUTES`.
-- Work packages must be scoped to <=14 expected active minutes. Short test/observation packages use their real shorter estimate; for example a 3-minute package sets `NEXT_WAKE_DELAY_MINUTES=3`.
-- 14 minutes is a maximum package-sizing target, not a padding requirement or stop-success condition.
+- Preferred/default work package target is 14 active minutes because minimizing relay idle time is a primary objective.
+- Build approximately 14 minutes of genuinely useful contiguous work whenever available; finishing a small subtask is not a reason to shorten the package.
+- Packages shorter than 14 minutes are exceptions only for inherently short or externally gated next steps (for example brief test/observation/CI waits) and must record a concrete `SHORT_PACKAGE_REASON`.
+- Never idle or pad merely to hit 14 minutes; use adjacent useful work when available.
+- Official timing is externalized to GitHub server timestamps in issue #1 `[PARROT_RELAY_WORK_MARKERS]`. Every wake records WAKE/START/END and reports both `SESSION_ELAPSED=END-WAKE` and `WORKED=END-START`.
 
 Status: CONTINUE
 Latest version: v0.8.6
