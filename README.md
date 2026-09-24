@@ -3,14 +3,14 @@
 ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 처리하는 로컬 Chrome Extension입니다. 실제 provider adapter는 현재 ChatGPT만 지원합니다. Claude / Gemini / Grok은 adapter boundary만 유지하며 아직 구현하지 않습니다.
 
 ## Status
-`v0.8.7` candidate exists, but it is **NON-RELEASE** until the real Chromium + ChatGPT M6 smoke gate passes. Static CI is not a browser-compatibility claim.
+`v0.8.7` candidate exists, but it is **NON-RELEASE** until the real Chromium + authenticated ChatGPT M6 smoke gate passes. Static CI is not a browser-compatibility claim.
 
 ## Candidate install for M6 testing
 1. Use the candidate bound to source commit `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691` / Actions run `35979821480`.
 2. Extract it so `manifest.json` is directly inside the selected extension directory.
 3. In Chromium/Chrome extension management, enable Developer mode and choose **Load unpacked**.
-4. Open the popup, register/configure a ChatGPT conversation target, and use Dashboard for fleet control.
-5. Execute `docs/LIVE_SMOKE_CHECKLIST.md`; record only structural evidence in `docs/LIVE_SMOKE_RESULT_TEMPLATE.md`, never chat prose.
+4. Use an authenticated real ChatGPT profile, open the popup, register/configure conversation targets, and use Dashboard for fleet control.
+5. Execute `docs/LIVE_SMOKE_CHECKLIST.md`; record only structural evidence in `docs/LIVE_SMOKE_RESULT_TEMPLATE.md`, never chat prose, account identity, cookies, tokens, or credentials. Authentication must be explicitly confirmed using non-secret structural UI evidence; a ChatGPT URL alone is insufficient.
 6. Any observed failure blocks release and reopens the affected earlier milestone.
 
 ## Capabilities
@@ -67,7 +67,7 @@ Exact later v0.8.6 runtime bytes were not recovered, so v0.8.7 is a deliberate r
 
 ## Known limitations before release
 - Claude/Gemini/Grok provider implementations are deferred.
-- Real behavior depends on current ChatGPT DOM/control structure; M6 must validate the exact candidate.
+- Real behavior depends on current ChatGPT DOM/control structure; M6 must validate the exact candidate on an authenticated real ChatGPT session.
 - Ambiguity and genuine rate-limit states may not be safely/naturally observable during smoke. If not observed, they remain explicit release limitations rather than being called PASS.
 - Candidate Actions artifacts are temporary test/evidence bundles, not final release artifacts.
 
