@@ -25,7 +25,8 @@ PLAN: execute `docs/LIVE_SMOKE_CHECKLIST.md` against exact M5 candidate. Static 
 CURRENT WORK:
 1. M6-C2 is next. Required evidence needs a supported interactive/authenticated real Chrome+ChatGPT surface that can keep the candidate extension page alive and expose real ChatGPT conversation tabs. Static/headless/local pages cannot substitute.
 2. Candidate-bound checklist/result template and machine evidence verifier are ready: `docs/LIVE_SMOKE_CHECKLIST.md`, `docs/LIVE_SMOKE_RESULT_TEMPLATE.md`, `scripts/verify-live-smoke-result.mjs`.
-3. While authenticated browser evidence is unavailable, continue independent safe M7 preparation without marking M6/M7 DONE.
+3. Live evidence now fails closed unless authenticated-session status is explicitly YES with non-secret structural authentication evidence; ChatGPT URL presence alone is insufficient. Environment/case/decision timestamps must be ISO-8601 UTC Z. The corresponding verifier self-tests passed exact-head Route State Contract run `35986732047` at commit `9bc147d8c6c88d8edd3b26bde275f503bdff82d5`.
+4. While authenticated browser evidence is unavailable, continue independent safe M7 preparation without marking M6/M7 DONE.
 
 ### M7 — First release delivery — PENDING
 Phase: PLAN
@@ -37,11 +38,11 @@ Phase: PLAN
 Preparation: `docs/RELEASE_NOTES_DRAFT.md`, README candidate install/limitations, candidate-bound live evidence verifier, and fail-closed final release builder are ready. Obsolete BATON mirror workflow was removed after the BATON layer was retired. No final release claim before M6.
 
 M7 preparation evidence / open verification:
-- Live-result verifier checks case-row evidence plus decision-summary consistency, UTC decision time, and explicit limitation text when S9/S10 is NOT_OBSERVED. Corrected exact-head `49a9da4fecdc9afa2fd99bc45fba311cebe3246b` passed Route State Contract run `35983716086`.
+- Live-result verifier checks exact candidate binding, explicit authenticated-session structural provenance without identity/secrets, ISO-8601 UTC Z timestamps, case-row evidence, decision-summary consistency, and explicit limitation text when S9/S10 is NOT_OBSERVED. Exact-head verifier tests at `9bc147d8c6c88d8edd3b26bde275f503bdff82d5` passed Route State Contract run `35986732047`.
 - Final release builder verifies live evidence against exact candidate `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`, records release-repository SHA separately, and fail-closes if committed `extension/` differs from candidate tree. Any extension change after candidate creation requires a new candidate and fresh M6.
-- Independent Git compare through main `584d25633a4d320ed73f27a900098fa46b4006e2` reported 39 commits ahead of candidate with **no `extension/` changed files**; current and candidate `extension/manifest.json` blob SHA are identical (`4deb32ae...`).
+- Independent Git compare through release-notes alignment commit `5d1e2f872a795544f2f6136ae734a2375ef525ce` reported 48 commits ahead of candidate with **no `extension/` changed files**. Candidate product bytes therefore remain unchanged by M6/M7 evidence/tooling hardening.
 - Release builder hardening commit `dd128d09ea3476775b5838ee0ca213d89ec5a69f` rejects staged, unstaged, or untracked `extension/` changes before packaging, restricts release output to `.zip`, and clears stale provenance before rebuilding. This prevents packaging dirty product bytes under a clean recorded release-repository SHA. Exact-head Route State Contract run `35984699779` completed SUCCESS.
-- README and release-notes draft document candidate-tree identity; final provenance sidecar records candidate SHA + release-repository SHA. GitHub Releases is still empty, so no premature release has been published.
+- README and release-notes draft document candidate-tree identity and authenticated M6 requirement; final provenance sidecar records candidate SHA + release-repository SHA. GitHub Releases is still empty, so no premature release has been published.
 
 ## Completed milestone evidence summary
 - M0: ChatGPT-first, structural-only status/signals, milestone-only control model.
