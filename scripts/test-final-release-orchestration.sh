@@ -34,7 +34,9 @@ install_success_stubs() {
 
 install_success_stubs
 OUT=$TMP/release.zip
-bash scripts/build-final-release.sh docs/LIVE_SMOKE_RESULT.md HEAD "$OUT" docs/RELEASE_NOTES_DRAFT.md >/dev/null
+RESULT=$TMP/live-result.md
+printf 'verified evidence bytes\n' > "$RESULT"
+bash scripts/build-final-release.sh "$RESULT" HEAD "$OUT" docs/RELEASE_NOTES_DRAFT.md >/dev/null
 
 mapfile -t CALLS < "$LOG"
 EXPECTED=(cleanup worktree preflight live-evidence limitations repository archive provenance)
@@ -45,9 +47,23 @@ done
 
 grep -Fq 'worktree|docs/RELEASE_NOTES_DRAFT.md' "$LOG" || { echo 'FAIL: release notes not passed to worktree gate' >&2; exit 1; }
 grep -Fq 'preflight|HEAD' "$LOG" || { echo 'FAIL: candidate SHA not passed to preflight' >&2; exit 1; }
-grep -Fq 'live-evidence|docs/LIVE_SMOKE_RESULT.md HEAD' "$LOG" || { echo 'FAIL: live evidence args not candidate-bound' >&2; exit 1; }
+LIVE_ARG=$(grep '^live-evidence|' "$LOG" | cut -d'|' -f2- | awk '{print $1}')
+PROV_RESULT_ARG=$(grep '^provenance|' "$LOG" | awk -F'|' '{print $2}' | awk '{print $4}')
+[[ -n "$LIVE_ARG" && "$LIVE_ARG" == "$PROV_RESULT_ARG" ]] || { echo 'FAIL: verification and provenance did not receive the same live-result snapshot' >&2; cat "$LOG" >&2; exit 1; }
+[[ "$LIVE_ARG" != "$RESULT" ]] || { echo 'FAIL: builder passed mutable caller live-result path directly to release gates' >&2; exit 1; }
 grep -Fq "archive|$OUT" "$LOG" || { echo 'FAIL: archive output path not propagated' >&2; exit 1; }
 grep -Fq 'provenance|' "$LOG" || { echo 'FAIL: provenance writer not reached' >&2; exit 1; }
+
+# Mutating the caller-owned evidence during verification must not change the
+# bytes later bound into provenance: both gates consume the frozen snapshot.
+install_success_stubs
+: > "$LOG"
+printf 'original evidence\n' > "$RESULT"
+export PARROT_MUTABLE_RESULT=$RESULT
+stub scripts/verify-candidate-live-evidence.sh live-evidence 'printf "changed after snapshot\n" > "$PARROT_MUTABLE_RESULT"; echo "PASS: fake candidate-bound evidence"'
+stub scripts/write-release-provenance.sh provenance 'grep -Fxq "original evidence" "$4" || { echo "FAIL: provenance did not receive verified snapshot bytes" >&2; exit 41; }; touch "$1.provenance.txt"'
+bash scripts/build-final-release.sh "$RESULT" HEAD "$TMP/toctou.zip" docs/RELEASE_NOTES_DRAFT.md >/dev/null
+[[ $(cat "$RESULT") == 'changed after snapshot' ]] || { echo 'FAIL: mutation fixture did not execute' >&2; exit 1; }
 
 assert_blocked_at() {
   local script=$1 gate=$2 code=$3 expected_calls=$4 stale=${5:-yes}
@@ -59,7 +75,7 @@ assert_blocked_at() {
     touch "$blocked_out" "$blocked_out.sha256" "$blocked_out.files.txt" "$blocked_out.provenance.txt"
   fi
   set +e
-  bash scripts/build-final-release.sh docs/LIVE_SMOKE_RESULT.md HEAD "$blocked_out" docs/RELEASE_NOTES_DRAFT.md >/dev/null 2>&1
+  bash scripts/build-final-release.sh "$RESULT" HEAD "$blocked_out" docs/RELEASE_NOTES_DRAFT.md >/dev/null 2>&1
   rc=$?
   set -e
   [[ $rc -eq $code ]] || { echo "FAIL: $gate failure exit code not propagated: $rc" >&2; exit 1; }
@@ -82,4 +98,4 @@ assert_blocked_at scripts/verify-release-repository.sh repository 29 6
 assert_blocked_at scripts/build-release-archive.sh archive 27 7
 assert_blocked_at scripts/write-release-provenance.sh provenance 28 8
 
-echo 'PASS: final release builder invalidates stale output first, gates committed release tooling, delegates in order, propagates failures, and leaves no misleading publishable state.'
+echo 'PASS: final release builder freezes live evidence once, invalidates stale output first, gates committed release tooling, delegates in order, propagates failures, and leaves no misleading publishable state.'
