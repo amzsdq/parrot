@@ -6,11 +6,11 @@ Artifact SHA-256: d4ecc03f06f274a1ecba7cad98c465bb8031039637f5aafa32b014585f3692
 
 ## Current state
 
-v0.8.6 fixes durable route-queue history pruning: both `delivered` and manually `resolved` records count as terminal history. This prevents repeated manual ambiguity resolution from bypassing `MAX_ROUTE_RECORDS` and growing the durable queue without bound. Active records remain protected from arbitrary pruning.
+v0.8.6 fixes durable route-queue history pruning: both `delivered` and manually `resolved` records count as terminal history. Active records remain protected from arbitrary pruning.
 
-The repository source-of-truth migration remains incomplete. During the latest relay the previously stale `extension/manifest.json` was successfully replaced with the exact v0.8.6 artifact manifest, including `background.type = module` and version 0.8.6. README was also updated to v0.8.6.
+Repository source-of-truth migration is still in progress. `extension/manifest.json` is synchronized to the v0.8.6 artifact, including `background.type = module` and version 0.8.6. `extension/chatgpt-adapter.js` and `extension/dashboard.html` were previously verified against the artifact. This run added the exact artifact `extension/dashboard.css` in commit `66cf4a1e39c31216398bcdf1c89534fe92bd40b1`.
 
-A transient/incomplete `extension/background.js` sync stub was created during migration and immediately deleted in the same run; it is not canonical source and must not be treated as progress. The full runtime/UI package still needs to be committed from the v0.8.6 artifact.
+The full runtime/UI package is not yet committed, so GitHub is not yet a complete reconstructable source of truth.
 
 ## Verified v0.8.6 baseline
 
@@ -26,11 +26,12 @@ A transient/incomplete `extension/background.js` sync stub was created during mi
 
 - `extension/manifest.json` synchronized to v0.8.6 artifact in commit `1063183d9e2b731d79823551f788c8ff593c303a`.
 - README synchronized to v0.8.6/current migration status in commit `c950671210d07819908e3ea4dd1f8e18b9582459`.
-- GitHub write path is therefore confirmed operational; prior write blocking is not a current blocker.
+- `extension/dashboard.css` synchronized exactly from the v0.8.6 artifact in commit `66cf4a1e39c31216398bcdf1c89534fe92bd40b1`.
+- A subsequent attempt to create `extension/popup.css` was blocked by the connector safety layer; no partial popup.css file was created.
 
 ## Remaining high-value work
 
-1. Commit exact v0.8.6 package source for `background.js`, `content.js`, `dashboard.js`, `dashboard.css`, `popup.js`, `popup.html`, `popup.css`, and reconcile already-present `chatgpt-adapter.js` / `dashboard.html` against v0.8.6 artifact.
+1. Commit exact v0.8.6 package source for `background.js`, `content.js`, `dashboard.js`, `popup.js`, `popup.html`, `popup.css`, and reconcile already-present `chatgpt-adapter.js` / `dashboard.html` against v0.8.6 artifact.
 2. Rebuild the extension ZIP using repository source only and run JS syntax, manifest parse, ZIP integrity, and artifact-content comparison checks.
 3. Add durable route-state regression fixtures covering `pending → ambiguous → manual retry/resolved → delivered`, outbox reconciliation, and terminal pruning.
 4. Run real ChatGPT browser regression tests for selector/receipt stability.
