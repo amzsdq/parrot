@@ -46,6 +46,7 @@ jobs:
       - run: node scripts/test-cooldown-storage-contract.mjs
       - run: node scripts/test-live-smoke-verifier.mjs
       - run: node scripts/test-publication-record-verifier.mjs
+      - run: bash scripts/test-trusted-publication.sh
       - run: bash scripts/test-release-candidate-snapshot.sh
       - run: bash scripts/test-release-tooling-snapshot.sh
       - run: bash scripts/test-release-build-lock.sh
