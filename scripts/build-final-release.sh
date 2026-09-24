@@ -5,6 +5,7 @@ CANDIDATE_SHA=${2:-f51e4ba53753dade3bd3f9a64e2b3c50ca05d691}
 OUT=${3:-parrot-release.zip}
 NOTES=${4:-docs/RELEASE_NOTES_DRAFT.md}
 RELEASE_SHA=$(git rev-parse HEAD)
+LOCK_DIR="$OUT.build.lock"
 
 rm -f -- "$OUT.ready"
 cleanup_failed_release() {
@@ -17,9 +18,11 @@ trap cleanup_failed_release ERR
 TOOLING_SNAPSHOT=$(mktemp -d)
 RESULT_SNAPSHOT=
 CANDIDATE_SNAPSHOT=
+LOCK_HELD=NO
 cleanup_snapshots() {
   [[ -z "$RESULT_SNAPSHOT" ]] || rm -f -- "$RESULT_SNAPSHOT"
   [[ -z "$CANDIDATE_SNAPSHOT" ]] || rm -rf -- "$CANDIDATE_SNAPSHOT"
+  [[ "$LOCK_HELD" != YES ]] || rmdir -- "$LOCK_DIR" 2>/dev/null || true
   rm -rf -- "$TOOLING_SNAPSHOT"
 }
 trap cleanup_snapshots EXIT
@@ -30,6 +33,15 @@ trap cleanup_snapshots EXIT
 git archive "$RELEASE_SHA" -- scripts "$NOTES" | tar -x -C "$TOOLING_SNAPSHOT"
 TOOL_ROOT=$TOOLING_SNAPSHOT
 run_tool() { bash "$TOOL_ROOT/scripts/$1" "${@:2}"; }
+
+# Publication is a single-writer transaction per output path. Without this,
+# concurrent builders can invalidate or overwrite one another's sidecars/ready
+# marker between otherwise-correct fail-closed gates.
+if ! mkdir -- "$LOCK_DIR" 2>/dev/null; then
+  echo "FAIL: release output is already being built: $OUT" >&2
+  exit 1
+fi
+LOCK_HELD=YES
 
 run_tool prepare-release-output.sh "$OUT"
 run_tool verify-release-worktree.sh "$NOTES"
@@ -56,5 +68,5 @@ run_tool verify-release-repository.sh
 run_tool build-release-archive.sh "$OUT" "$VERSION" "$CANDIDATE_SNAPSHOT/tree/extension"
 run_tool write-release-provenance.sh "$OUT" "$CANDIDATE_SHA" "$RELEASE_SHA" "$RESULT_SNAPSHOT"
 run_tool publish-release-ready.sh "$OUT"
-echo "PASS: final release artifact built and marked publish-ready only after candidate-bound authenticated live evidence, immutable candidate-tree identity, frozen release tooling, and limitation gates."
+echo "PASS: final release artifact built and marked publish-ready only after candidate-bound authenticated live evidence, immutable candidate-tree identity, frozen release tooling, serialized publication, and limitation gates."
 trap - ERR
