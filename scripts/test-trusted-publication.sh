@@ -22,6 +22,7 @@ printf '%s\n' "$@" >"$GH_ARGS"
 [[ " $* " == *" --signer-repo amzsdq/parrot "* ]]
 [[ " $* " == *" --predicate-type https://slsa.dev/provenance/v1 "* ]]
 [[ " $* " == *" --source-digest 1111111111111111111111111111111111111111 "* ]]
+[[ " $* " == *" --source-ref refs/heads/main "* ]]
 [[ "$3" == "$EXPECTED_RECORD" ]]
 EOF
 chmod +x "$TMP/bin/gh"
