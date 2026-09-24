@@ -269,11 +269,11 @@ async function saveForm() {
   t.url = normalizeUrl(els.url.value.trim());
   t.prompt = els.prompt.value;
   t.mode = els.mode.value;
-  t.delaySec = Number(els.delaySec.value || 0);
+  t.delaySec = Math.max(0, Number(els.delaySec.value || 0));
   t.sendImmediately = els.sendImmediately.checked;
-  t.intervalMin = Number(els.intervalMin.value || 1);
-  t.maxRepeats = Number(els.maxRepeats.value || 0);
-  t.runtimeMin = Number(els.runtimeMin.value || 0);
+  t.intervalMin = Math.max(1, Number(els.intervalMin.value || 11));
+  t.maxRepeats = Math.max(0, Number(els.maxRepeats.value || 0));
+  t.runtimeMin = Math.max(0, Number(els.runtimeMin.value || 0));
   t.cooldownEnabled = els.cooldownEnabled.checked;
   t.routingEnabled = els.routingEnabled.checked;
   t.onboardingEnabled = els.onboardingEnabled.checked;
