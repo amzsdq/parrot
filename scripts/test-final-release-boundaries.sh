@@ -15,8 +15,8 @@ require_pattern() {
   }
 }
 
-# Dirty-tree/candidate identity and output cleanup are executable-tested separately.
-# These structural checks ensure production builder still delegates to the shared gates.
+# Detailed behavior of shared gates is executable-tested separately.
+# These structural checks ensure the production builder still delegates to them.
 require_pattern "$BUILDER" 'shared release preflight invocation' 'verify-release-preflight\.sh "\$CANDIDATE_SHA"'
 require_pattern "$PREFLIGHT" 'unstaged extension dirty-tree' 'git diff --quiet -- extension'
 require_pattern "$PREFLIGHT" 'staged extension dirty-tree' 'git diff --cached --quiet -- extension'
@@ -28,8 +28,6 @@ require_pattern "$BUILDER" 'shared output cleanup invocation' 'prepare-release-o
 require_pattern "$CLEANUP" 'stale artifact cleanup' 'rm -f -- "\$OUT" "\$OUT\.sha256" "\$OUT\.files\.txt" "\$PROVENANCE"'
 require_pattern "$BUILDER" 'archive integrity check' 'unzip -t "\$OUT"'
 require_pattern "$BUILDER" 'artifact checksum' 'sha256sum "\$OUT"'
-require_pattern "$BUILDER" 'provenance candidate SHA' 'candidate_sha=%s'
-require_pattern "$BUILDER" 'provenance release SHA' 'release_repo_sha=%s'
-require_pattern "$BUILDER" 'provenance live-result checksum' 'live_result_sha256=%s'
+require_pattern "$BUILDER" 'shared provenance writer invocation' 'write-release-provenance\.sh "\$OUT" "\$CANDIDATE_SHA" "\$RELEASE_SHA" "\$RESULT"'
 
-echo 'PASS: final release builder delegates shared preflight/output cleanup and retains live-evidence, integrity, and provenance fail-closed boundaries.'
+echo 'PASS: final release builder delegates shared preflight/output/provenance gates and retains live-evidence and integrity boundaries.'
