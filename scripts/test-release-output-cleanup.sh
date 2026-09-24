@@ -6,6 +6,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 OUT="$TMP/parrot-test.zip"
 
+printf 'stale ready\n' > "$OUT.ready"
 printf 'stale zip\n' > "$OUT"
 printf 'stale sha\n' > "$OUT.sha256"
 printf 'stale files\n' > "$OUT.files.txt"
@@ -13,7 +14,7 @@ printf 'stale provenance\n' > "$OUT.provenance.txt"
 
 bash "$ROOT/scripts/prepare-release-output.sh" "$OUT"
 
-for path in "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt"; do
+for path in "$OUT.ready" "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt"; do
   [[ ! -e "$path" ]] || { echo "FAIL: cleanup left $path" >&2; exit 1; }
 done
 
@@ -22,4 +23,4 @@ if bash "$ROOT/scripts/prepare-release-output.sh" "$TMP/not-a-zip.bin" >/dev/nul
   exit 1
 fi
 
-echo 'PASS: release output cleanup removes stale artifact, checksum, file list, and provenance and rejects non-zip outputs.'
+echo 'PASS: release output cleanup invalidates readiness first, removes stale artifact/sidecars, and rejects non-zip outputs.'
