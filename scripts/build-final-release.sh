@@ -24,6 +24,13 @@ trap - EXIT
 
 node scripts/verify-repo.mjs
 bash scripts/prepare-release-output.sh "$OUT"
+cleanup_failed_release() {
+  local rc=$?
+  rm -f -- "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt"
+  exit "$rc"
+}
+trap cleanup_failed_release ERR
 bash scripts/build-release-archive.sh "$OUT" "$VERSION" extension
 bash scripts/write-release-provenance.sh "$OUT" "$CANDIDATE_SHA" "$RELEASE_SHA" "$RESULT"
 echo "PASS: final release artifact built only after candidate-bound authenticated live evidence, candidate-tree identity, and limitation gates."
+trap - ERR
