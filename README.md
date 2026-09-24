@@ -6,7 +6,7 @@ ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 �
 
 ## Current version
 
-`v0.8.4`
+`v0.8.5`
 
 ### Fleet dashboard scaling
 
@@ -17,17 +17,15 @@ ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 �
 - Dashboard는 활성 ChatGPT 탭에 종속되지 않는 extension control plane입니다.
 - Live dashboard는 채팅 본문을 의미 분석하지 않고 탭/DOM의 구조적 신호만 사용합니다.
 
-### Reliability: strong dispatch receipts
+### Reliability: strong + durable dispatch receipts
 
 - 일반 반복 전송과 WAKE/MESSAGE route delivery 모두 `sendButton.click()` 반환만으로 성공 처리하지 않습니다.
 - 성공 receipt는 새 user-message DOM 또는 assistant generation 시작만 인정합니다.
 - composer clear/change는 성공 증거로 인정하지 않습니다.
 - 일반 반복 전송에서 5초 안에 강한 receipt가 없으면 `dispatch_unconfirmed`로 기록하고 `sentCount`를 증가시키지 않습니다.
-- WAKE/MESSAGE에서 클릭 후 5초 안에 강한 receipt가 없으면 `dispatch_ambiguous`로 격리합니다. 실제 전송이 성공했을 가능성이 있으므로 자동 재전송하지 않아 중복 전달 위험을 줄입니다.
-- v0.8.4부터 ambiguous route는 Dashboard Routing 표에서만 명시적으로 처리합니다.
-  - `재시도`: 중복 전송 가능성을 경고하고 사용자 확인 뒤에만 다시 dispatch합니다.
-  - `해결 처리`: 아무 메시지도 보내지 않고 route를 `resolved`로 종료합니다.
-- ambiguous route는 자동 재시도되지 않습니다.
+- WAKE/MESSAGE에서 클릭 후 5초 안에 강한 receipt가 없으면 `dispatch_ambiguous`로 격리합니다. 실제 전송이 성공했을 가능성이 있으므로 자동 재전송하지 않습니다.
+- ambiguous route는 Dashboard에서만 명시적으로 `재시도` 또는 `해결 처리`할 수 있습니다.
+- v0.8.5부터 ambiguity receipt는 background messaging 전에 `chrome.storage.local`의 bounded outbox에 먼저 기록됩니다. 서비스 워커가 그 순간 재시작/비가용이어도 다음 background reconciliation이 route를 `ambiguous`로 fence하며, 자동 재전송하지 않습니다.
 
 ## Protocol
 
