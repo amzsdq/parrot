@@ -1,0 +1,10 @@
+import assert from'node:assert/strict';import{readFileSync}from'node:fs';const s=readFileSync(new URL('../extension/dashboard.js',import.meta.url),'utf8');
+assert.match(s,/workersBody[^\n]*addEventListener\(['"]click['"],workerAction\)/,'worker table delegates actions');
+assert.match(s,/data-worker-action/,'worker actions are explicit structural controls');
+assert.match(s,/workerAction[\s\S]*action===['"]start['"][\s\S]*chrome\.tabs\.sendMessage\(w\.tab\.id,\{type:['"]PARROT_START['"]/,'dashboard starts matching tab through PARROT_START without activation');
+assert.match(s,/action===['"]stop['"][\s\S]*status:['"]stopped['"]/,'dashboard stop persists non-running state');
+assert.match(s,/normalizeUrl\(c\.url\)===normalizeUrl\(target\.url\)/,'dashboard matches tabs by normalized exact URL');
+assert.doesNotMatch(s,/tabs\s*\[\s*0\s*\]/,'dashboard has no first-tab fallback');
+assert.match(s,/runId=crypto\.randomUUID\(\)/,'dashboard start creates fresh run identity');
+assert.match(s,/completionSignalUrl:`\$\{COMPLETE_PREFIX\}\$\{encodeURIComponent\(runId\)\}`/,'dashboard start binds completion URL to fresh run');
+console.log('PASS: dashboard direct start/stop controls remain exact-target and structurally fenced');
