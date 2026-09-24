@@ -51,13 +51,19 @@ assert_blocked_at() {
   install_success_stubs
   : > "$LOG"
   stub "$script" "$gate" "exit $code"
+  local blocked_out="$TMP/blocked-$gate.zip"
   set +e
-  bash scripts/build-final-release.sh docs/LIVE_SMOKE_RESULT.md HEAD "$TMP/blocked-$gate.zip" docs/RELEASE_NOTES_DRAFT.md >/dev/null 2>&1
+  bash scripts/build-final-release.sh docs/LIVE_SMOKE_RESULT.md HEAD "$blocked_out" docs/RELEASE_NOTES_DRAFT.md >/dev/null 2>&1
   rc=$?
   set -e
   [[ $rc -eq $code ]] || { echo "FAIL: $gate failure exit code not propagated: $rc" >&2; exit 1; }
   [[ $(wc -l < "$LOG") -eq $expected_calls ]] || { echo "FAIL: builder did not stop at $gate" >&2; cat "$LOG" >&2; exit 1; }
   [[ $(tail -n1 "$LOG" | cut -d'|' -f1) == "$gate" ]] || { echo "FAIL: expected final call $gate" >&2; cat "$LOG" >&2; exit 1; }
+  if (( expected_calls >= 5 )); then
+    for path in "$blocked_out" "$blocked_out.sha256" "$blocked_out.files.txt" "$blocked_out.provenance.txt"; do
+      [[ ! -e "$path" ]] || { echo "FAIL: failed $gate left partial release artifact: $path" >&2; exit 1; }
+    done
+  fi
 }
 
 assert_blocked_at scripts/verify-release-preflight.sh preflight 23 1
@@ -67,4 +73,4 @@ assert_blocked_at scripts/prepare-release-output.sh cleanup 26 4
 assert_blocked_at scripts/build-release-archive.sh archive 27 5
 assert_blocked_at scripts/write-release-provenance.sh provenance 28 6
 
-echo 'PASS: final release builder delegates gates in order and fails closed at every delegated transition.'
+echo 'PASS: final release builder delegates gates in order, propagates failures, and removes partial release artifacts.'
