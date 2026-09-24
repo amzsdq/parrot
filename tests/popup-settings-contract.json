@@ -3,8 +3,9 @@
   "purpose": "Regression vectors for the four saveForm numeric clamps lost in the current non-exact popup.js migration.",
   "cases": [
     {"id":"delay-negative-clamps-zero","field":"delaySec","input":-5,"expected":0},
-    {"id":"interval-zero-clamps-one","field":"intervalMin","input":0,"expected":1},
+    {"id":"interval-zero-falls-back-eleven","field":"intervalMin","input":0,"expected":11},
     {"id":"interval-empty-fallback-eleven","field":"intervalMin","input":"","expected":11},
+    {"id":"interval-negative-clamps-one","field":"intervalMin","input":-2,"expected":1},
     {"id":"max-repeats-negative-clamps-zero","field":"maxRepeats","input":-2,"expected":0},
     {"id":"runtime-negative-clamps-zero","field":"runtimeMin","input":-3,"expected":0}
   ],
