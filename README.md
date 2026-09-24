@@ -59,7 +59,15 @@ Repository source가 완전한 확장프로그램으로 재구축 가능한지 �
 node scripts/verify-repo.mjs
 ```
 
-검사는 manifest JSON parse, manifest/HTML이 참조하는 local file 존재 여부, repository에 있는 JavaScript의 `node --check` syntax를 확인합니다. 하나라도 빠지면 non-zero로 실패합니다. 현재 source-of-truth migration이 아직 끝나지 않았으므로 missing runtime source가 복구되기 전에는 이 gate가 실패하는 것이 정상입니다. Gate를 통과하기 전에는 repository를 완전한 rebuildable source로 인증하지 않습니다.
+v0.8.7 reconstruction contract vector 자체의 JSON/schema/unique-id 무결성은 다음으로 확인합니다.
+
+```text
+node scripts/validate-contracts.mjs
+```
+
+`validate-contracts` 통과는 contract fixture가 정상이라는 뜻일 뿐 production runtime이 contract를 통과했다는 뜻은 아닙니다. Production 구현 후에는 fixture를 실제 runtime test harness에 연결해야 합니다.
+
+`verify-repo`는 manifest JSON parse, manifest/HTML이 참조하는 local file 존재 여부, repository JavaScript의 `node --check` syntax를 확인합니다. 하나라도 빠지면 non-zero로 실패합니다. 현재 source-of-truth migration이 아직 끝나지 않았으므로 missing runtime source가 복구되기 전에는 이 gate가 실패하는 것이 정상입니다. Gate를 통과하기 전에는 repository를 완전한 rebuildable source로 인증하지 않습니다.
 
 ## Development principles
 
@@ -73,4 +81,4 @@ node scripts/verify-repo.mjs
 
 ## Source status
 
-GitHub source-of-truth migration is in progress. `extension/manifest.json` and several UI/support files are synchronized to the v0.8.6 artifact, but the full v0.8.6 package has not yet been committed/rebuilt solely from repository source. `background.js`, `content.js`, and `dashboard.js` are still missing, and `popup.js` byte-exact certification remains unresolved. See `docs/DEVELOPMENT_CHECKPOINT.md`.
+GitHub source-of-truth migration is in progress. `extension/manifest.json` and several UI/support files are synchronized to the v0.8.6 artifact, but the full v0.8.6 package has not yet been committed/rebuilt solely from repository source. `background.js`, `content.js`, and `dashboard.js` are still missing. `popup.js` exact target bytes and the precise four-line regression causing its 53-byte drift are now known, but the repository replacement is still pending. See `docs/DEVELOPMENT_CHECKPOINT.md`.
