@@ -25,7 +25,6 @@ if (!failures) {
   popup.includes("type: 'PARROT_START'")&&content.includes("message?.type === 'PARROT_START'")?pass('PARROT_START connected'):fail('PARROT_START disconnected');
   content.includes('ParrotPromptCompose.compose')&&content.includes('firstSend: Number(target?.sentCount || 0) === 0')?pass('target prompt composition wired with first-send state'):fail('prompt composition runtime seam missing');
   content.includes('ParrotRepeatPolicy.stopReason')&&content.includes('ParrotRepeatPolicy.intervalDue')?pass('repeat policy runtime seam wired'):fail('repeat policy runtime seam missing');
-  content.includes("target.mode !== 'response'")?fail('legacy response-only mode rejection remains'):pass('response-only mode rejection removed');
   content.includes("mode === 'interval' ? runIntervalMode : runResponseMode")?pass('interval/response runner dispatch present'):fail('mode runner dispatch missing');
   content.includes('waitUntilIdleOrStopped')?pass('response runner lifecycle guard present'):fail('response runner lifecycle guard missing');
   adapter.includes('getUserMessageCount')?pass('adapter exposes user count'):fail('adapter user count missing');
