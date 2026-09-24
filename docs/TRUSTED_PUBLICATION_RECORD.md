@@ -56,7 +56,21 @@ The adapter pins all independently meaningful identities available from GitHub C
 
 `--repo` constrains the repository associated with the attestation lookup/identity; `--signer-repo` constrains the signing workflow repository; `--predicate-type` prevents accepting an unrelated claim type; and `--source-digest` binds the cryptographically verified provenance source commit to the same release repository SHA that the record claims. The parsed identities are emitted only after `gh attestation verify` succeeds.
 
-For the eventual M7 workflow, pin a specific signer workflow (or signer digest) as well once the release workflow path is finalized. Repository-only signer pinning is the safe pre-workflow minimum, not the final strongest policy.
+### Final signer pinning gate
+
+GitHub CLI recommends validating the signer workflow path as precisely as possible with `--signer-workflow` (or pinning the signer workflow commit with `--signer-digest`). That is materially stronger than repository-only signer pinning because another workflow in the same repository must not be allowed to mint an accepted publication record.
+
+Do **not** add a guessed signer workflow path or digest before the release workflow exists. As of this design checkpoint the repository contains only the M6 Chromium smoke workflow and Route State Contract workflow; neither is an authorized M7 release signer. Prematurely pinning either one would encode the wrong trust root rather than harden it.
+
+The M7 implementation gate is therefore:
+
+1. create/review the dedicated release publication workflow only after M6 PASS authorizes release work;
+2. freeze its canonical repository path;
+3. choose `--signer-workflow <host/owner/repo/path>` as the stable identity policy, optionally adding `--signer-digest <workflow-commit>` when deliberately requiring one immutable workflow revision;
+4. add an executable consumer regression where a cryptographically valid attestation from another workflow in `amzsdq/parrot` is rejected by the signer pin;
+5. only then enable real publication/attestation.
+
+Do not parse GitHub CLI certificate/timestamp output to build a weaker local cryptographic verifier. `gh attestation verify` remains the cryptographic boundary; Parrot only supplies stricter identity policy to it.
 
 ## Publication ordering
 
