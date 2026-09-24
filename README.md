@@ -19,6 +19,8 @@ ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 �
 - receipt가 확인되지 않은 route는 `ambiguous`로 fence하고 자동 재전송하지 않습니다.
 - ambiguity receipt는 background messaging 전에 bounded `chrome.storage.local` outbox에 기록됩니다.
 - `delivered`와 수동 `resolved` route는 terminal history이며 active records는 history cap 때문에 제거하지 않습니다.
+- cooldown 감지는 assistant/user 메시지 본문을 읽지 않고 구조적 error attribute/selectors만 사용합니다. 반복 runner와 routed send 모두 persisted cooldown deadline을 존중합니다.
+- cooldown ladder는 rate-limit 10→20→40→60분, transient 2→5→10→20분이며 `cooldownEnabled=false`인 target runner는 이를 적용하지 않습니다.
 
 ## Protocol
 
@@ -42,12 +44,17 @@ Repository root에서 다음 gates를 실행합니다.
 ```text
 node scripts/test-route-state.mjs
 node scripts/test-route-queue.mjs
+node scripts/test-signal-protocol.mjs
+node scripts/test-prompt-compose.mjs
+node scripts/test-repeat-policy.mjs
+node scripts/test-chatgpt-adapter-structure.mjs
+node scripts/test-cooldown-storage-contract.mjs
 node scripts/validate-contracts.mjs
 node scripts/validate-v087-integration.mjs
 node scripts/verify-repo.mjs
 ```
 
-GitHub Actions의 `Route State Contract` workflow도 위 production integration/rebuildability gates를 실행합니다. Contract JSON이 정상이라는 사실과 production runtime이 통과한다는 사실은 구분합니다.
+GitHub Actions의 `Route State Contract` workflow도 위 production integration/rebuildability gates를 실행합니다. Contract가 정상이라는 사실과 production runtime이 통과한다는 사실은 구분합니다.
 
 ## v0.8.7 reconstruction status
 
@@ -55,15 +62,16 @@ Exact v0.8.6 `background.js`, `content.js`, `dashboard.js` bytes는 확보되지
 
 현재 repository에는 다음 production slice가 있습니다.
 
-- classic MV3 `background.js`가 `route-state.js`와 `route-queue.js`를 로드합니다.
-- periodic routing은 pending-only state guard를 사용합니다.
+- classic MV3 `background.js`가 route/signal/repeat policy primitives를 로드합니다.
+- periodic routing은 pending-only state guard와 target cooldown backpressure를 사용합니다.
 - ambiguity reconciliation은 state-only이며 manual Retry/Resolve가 별도 message contract입니다.
 - `content.js`는 click 전 user-message count를 잡고 count 증가 또는 generation start만 strong receipt로 인정합니다.
 - strong receipt timeout은 ambiguous이며, 구조 receipt를 local outbox에 먼저 저장한 뒤 background에 알립니다.
+- response/interval runner는 공통 prompt composition, stop policy, structural cooldown state를 사용합니다.
 - manifest는 v0.8.7/classic worker/content load order로 전환했습니다.
 - dashboard controller는 worker pagination/search/filter와 ambiguous Retry/Resolve를 제공합니다.
 
-주의: repository gate 통과는 실제 ChatGPT 브라우저 smoke test를 대체하지 않습니다. 실제 selector/send/receipt 동작과 완성된 v0.8.7 ZIP은 별도 검증 대상입니다.
+주의: repository gate 통과는 실제 ChatGPT 브라우저 smoke test를 대체하지 않습니다. 실제 selector/send/receipt/cooldown 동작과 완성된 v0.8.7 ZIP은 별도 검증 대상입니다.
 
 ## popup.js provenance
 
