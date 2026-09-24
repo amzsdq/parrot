@@ -20,7 +20,6 @@ jobs:
       - run: node --check extension/signal-scanner.js
       - run: node --check extension/prompt-compose.js
       - run: node --check extension/repeat-policy.js
-      - run: node --check extension/runner-policy.mjs || true
       - run: node --check extension/runner-policy.js
       - run: node --check extension/runner-registry.js
       - run: node --check extension/dashboard-model.js
