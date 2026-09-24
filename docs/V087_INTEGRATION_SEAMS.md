@@ -20,13 +20,7 @@ Pruning must delegate to the active-preserving terminal policy: every nontermina
 
 ## Content strong receipt
 
-Recovered v0.8.0 `tryDeliverRoute()` clicks once and then `waitForDispatchReceipt()` accepts any of:
-
-- assistant generation begins;
-- composer becomes empty;
-- composer text changes.
-
-The latter two are not delivery proof.
+Recovered v0.8.0 `tryDeliverRoute()` clicks once and then `waitForDispatchReceipt()` accepts generation start, composer cleared, or composer changed. The latter two are not delivery proof.
 
 Target sequence:
 
@@ -48,14 +42,23 @@ Composer clearing/changing may be diagnostic metadata but must not upgrade statu
 
 Use `ParrotRouteState.classifyTabStructure(tab)`. `discarded` and `frozen` are structural states, not generic content-script failures. If the `frozen` property is absent, support is `unknown`; do not infer `frozen=false`.
 
-## Loading strategy
+## Loading strategy — selected
 
-`route-state.js` is currently a global IIFE so content/dashboard surfaces can load it before their scripts. The MV3 background is a module; before integration choose one explicit strategy rather than duplicating logic:
+Use one canonical browser-global `extension/route-state.js` implementation across content/dashboard/background rather than maintaining two copies.
 
-- convert the primitive to an ES module and add a thin global bridge for classic content scripts, or
-- keep the browser-global build plus a source-equivalent module build generated/tested from one canonical implementation.
+For v0.8.7 reconstruction, use a classic MV3 extension service worker and load the primitive synchronously at the top of reconstructed `background.js` with:
 
-Do not manually maintain two divergent copies of the state machine.
+```js
+importScripts('route-state.js');
+```
+
+Then remove `"type": "module"` from the manifest background entry because the reconstructed background does not require ES-module syntax. Chrome's official extension-service-worker documentation states that service workers can import scripts with either ES-module `import` (requiring `type: module`) or `importScripts()`. This choice matches the recovered v0.8.0 classic-style source and allows content scripts to load the exact same `route-state.js` before `content.js` through manifest ordering.
+
+Do not introduce a second hand-maintained module copy. If later architecture genuinely requires ES modules, convert from one canonical source with a generated bridge and conformance test rather than duplicating state logic.
+
+References:
+- Chrome Extension service worker basics: https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/basics
+- Chrome service-worker migration guidance: https://developer.chrome.com/docs/extensions/develop/migrate/to-service-workers
 
 ## Acceptance slice
 
