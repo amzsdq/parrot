@@ -30,7 +30,7 @@ jobs:
       - run: node --check extension/content.js
       - run: node --check extension/dashboard.js
       - run: node --check scripts/verify-live-smoke-result.mjs
-      - run: bash -n scripts/build-final-release.sh scripts/build-release-archive.sh scripts/verify-release-preflight.sh scripts/verify-candidate-live-evidence.sh scripts/verify-release-limitations.sh scripts/prepare-release-output.sh scripts/write-release-provenance.sh scripts/test-release-limitations.sh scripts/test-release-preflight.sh scripts/test-candidate-live-evidence.sh scripts/test-release-output-cleanup.sh scripts/test-release-provenance.sh scripts/test-release-archive.sh scripts/test-final-release-boundaries.sh scripts/test-final-release-orchestration.sh
+      - run: bash -n scripts/build-final-release.sh scripts/build-release-archive.sh scripts/verify-release-worktree.sh scripts/verify-release-preflight.sh scripts/verify-candidate-live-evidence.sh scripts/verify-release-limitations.sh scripts/prepare-release-output.sh scripts/write-release-provenance.sh scripts/test-release-worktree.sh scripts/test-release-limitations.sh scripts/test-release-preflight.sh scripts/test-candidate-live-evidence.sh scripts/test-release-output-cleanup.sh scripts/test-release-provenance.sh scripts/test-release-archive.sh scripts/test-final-release-boundaries.sh scripts/test-final-release-orchestration.sh
       - run: node scripts/test-route-state.mjs
       - run: node scripts/test-route-queue.mjs
       - run: node scripts/test-signal-protocol.mjs
@@ -44,6 +44,7 @@ jobs:
       - run: node scripts/test-chatgpt-adapter-structure.mjs
       - run: node scripts/test-cooldown-storage-contract.mjs
       - run: node scripts/test-live-smoke-verifier.mjs
+      - run: bash scripts/test-release-worktree.sh
       - run: bash scripts/test-release-limitations.sh
       - run: bash scripts/test-release-preflight.sh
       - run: bash scripts/test-candidate-live-evidence.sh
