@@ -3,6 +3,15 @@
 Status: CONTINUE
 Current line: v0.8.7-reconstruction
 
+## Milestone execution model
+
+- `docs/MILESTONES.md` is the durable program-level work supply above BATON.
+- The relay uses `CONTRACT -> BUILD -> EVALUATE -> FIX -> DONE`.
+- Criteria are recorded as PASS / FAIL / UNVERIFIED; UNVERIFIED is never treated as PASS.
+- `docs/BATON.md` remains the latest-only ~14-minute tactical slice, but every baton must identify `MILESTONE_ID`, `MILESTONE_PHASE`, and `ACTIVE_CRITERION` and be derived from the earliest unmet required milestone criterion.
+- Finishing one baton is not a stop condition. If a criterion finishes early, continue to the next criterion/milestone while useful work remains.
+- No separate mutable `STATE.json` is introduced because BATON + MILESTONES + DEVELOPMENT_CHECKPOINT already cover immediate, program, and durable-summary state; duplicating mutable state would increase reconciliation risk.
+
 ## Relay / evidence model
 
 - `docs/BATON.md` is latest-only and is read first on every wake.
