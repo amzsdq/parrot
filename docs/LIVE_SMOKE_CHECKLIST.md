@@ -1,51 +1,42 @@
 # Parrot v0.8.7 live browser smoke checklist
 
-This gate requires a real Chromium/Chrome instance with the repository `extension/` loaded unpacked. Static CI, source inspection, mocks, and GitHub Actions do not satisfy it.
+This gate requires a real Chromium/Chrome instance with the exact candidate `extension/` loaded unpacked. Static CI/source inspection/mocks/Actions do not satisfy it.
 
 ## Evidence rules
-
-For every case record: browser version, extension commit SHA, target ChatGPT URL/worker label, UTC timestamp, PASS/FAIL, and the structural evidence observed. Do not copy or persist assistant/user message prose as evidence.
+For every case record browser version, exact extension commit SHA, target ChatGPT URL/worker label, UTC timestamp, PASS/FAIL, and structural evidence observed. Never copy/persist assistant/user prose as evidence. Use harmless bounded prompts. Do not manufacture rate limits or duplicate real messages.
 
 ## S1 — unpacked load / control plane
+PASS only if extension loads without manifest/service-worker/content-script errors, popup/dashboard open, and a real `https://chatgpt.com/*` tab is structurally visible.
 
-PASS only if `extension/` loads without manifest/service-worker/content-script errors, popup opens, dashboard opens, and a real `https://chatgpt.com/*` tab is structurally visible to the extension.
-
-## S2 — exact target resolution
-
-Create/select a target for one open ChatGPT conversation. PASS only if Start resolves that exact normalized conversation URL and does not silently choose a different ChatGPT tab. Closed-target behavior must report `target_tab_not_open` rather than sending elsewhere.
+## S2 — exact target + dashboard control
+Register at least two different open ChatGPT conversations. Keep Dashboard active. From Dashboard Start worker A without activating A's ChatGPT tab; verify only exact normalized A target runs. Stop A from Dashboard and verify storage/content reconciliation fences it. Start B separately and verify no first-tab fallback/cross-target send. Closed target must not offer/send Start and must never route elsewhere.
 
 ## S3 — composer + strong receipt
+Send one harmless prompt. PASS only if real composer/send control is used and delivery is accepted only after user-message count increases or assistant generation starts. Composer change/clear alone is not receipt.
 
-Send one harmless prompt. PASS only if Parrot fills the real composer, invokes the real send control, and delivery is accepted only after user-message count increases or assistant generation starts. A cleared/changed composer alone is not a receipt.
-
-## S4 — response mode
-
-Use a bounded target (`maxRepeats=2` recommended). PASS only if first-send onboarding/completion composition occurs as configured, the next send waits for generation to finish plus configured delay, exactly two sends are strongly receipted, then the target stops by max-repeat policy. No duplicate runner is allowed.
+## S4 — response mode + configured delay
+Use bounded target (`maxRepeats=2`). PASS only if onboarding/completion composition occurs as configured, first automatic response send respects configured initial delay, next send waits for generation finish plus configured delay, exactly two sends are strongly receipted, then max-repeat stops. `sendImmediately=false` must not auto-arm on reload/storage reconciliation.
 
 ## S5 — interval mode
+Use short safe interval and `maxRepeats=2`. PASS only if sends occur no earlier than interval eligibility, strong receipts are required, duplicate start attempts do not duplicate sends, and max-repeat stops target.
 
-Use a short safe interval and `maxRepeats=2`. PASS only if sends occur no earlier than interval eligibility, strong receipts are required, duplicate runner start does not duplicate sends, and max-repeat stops the target.
+## S6 — reload recovery / single-runner fence
+While one response target is running, reload its ChatGPT page; repeat once with interval mode. PASS only if exactly one effective runner resumes for the exact URL. Trigger a legitimate response↔interval mode change and verify old runner is fenced and no duplicate send occurs. Pause/stop/delete then reload; none may resurrect a runner.
 
-## S6 — COMPLETE
+## S7 — COMPLETE
+Use current runId COMPLETE URL. PASS only if structural `parrot.invalid/complete/<runId>` anchor is discovered once, matching target becomes completed, duplicate observation is deduped, and partial/non-COMPLETE work does not create completion state.
 
-Use the target's current runId COMPLETE URL. PASS only if the structural `parrot.invalid/complete/<runId>` anchor is discovered once, matching target becomes completed, duplicate observation is deduped, and partial/non-COMPLETE work does not create completion state.
+## S8 — WAKE / MESSAGE routing
+With two targets, emit one WAKE and one MESSAGE using unique event IDs. PASS only if each becomes one pending route, resolves intended target, gets strong receipt, and becomes delivered once. MESSAGE may retain explicit ref identifier/URL but never scrape surrounding prose.
 
-## S7 — WAKE / MESSAGE routing
+## S9 — ambiguity fence + Dashboard actions
+In a controlled non-destructive naturally occurring case where send was attempted but strong receipt cannot be confirmed, PASS only if route becomes ambiguous, durable ambiguity receipt exists before notification, automatic redelivery stops, and Dashboard Retry/Resolve are explicit continuation actions. Do not intentionally duplicate a real message to force this case. If safe ambiguity cannot be observed, record NOT_OBSERVED and keep this release criterion open.
 
-With two registered targets, emit one WAKE and one MESSAGE signal using unique event IDs. PASS only if each becomes one pending route, resolves the intended target, obtains a strong receipt on delivery, and becomes delivered once. MESSAGE evidence may retain the explicit reference identifier/URL but must not scrape surrounding chat prose.
+## S10 — structural cooldown
+Only when genuine rate-limit/transient structural error naturally occurs. PASS only if classification comes from structural attributes/selectors, persisted target state contains structural cooldown metadata, sends are gated until due, Dashboard displays actionable cooldown timing, and later confirmed success resets cooldown. If absent, record NOT_OBSERVED and document selector validity as unverified.
 
-## S8 — ambiguity fence
-
-In a controlled non-destructive setup where send is attempted but strong receipt cannot be confirmed, PASS only if the route becomes ambiguous, durable ambiguity receipt exists before background notification, automatic redelivery stops, and Dashboard Retry/Resolve are the only continuation actions. Do not intentionally create duplicate real user messages merely to force this case.
-
-## S9 — structural cooldown
-
-Only when a genuine rate-limit/transient structural error naturally occurs. Do not intentionally hammer ChatGPT to manufacture a limit. PASS only if classification comes from structural error attributes/selectors rather than assistant/user prose, target cooldown fields contain kind/step/until/code only, sends are gated until due, dashboard shows structural cooldown timing, and a later confirmed successful send resets cooldown state. If no genuine cooldown occurs during smoke, record NOT_OBSERVED rather than PASS.
-
-## S10 — lifecycle / tab states
-
-Verify pause, stop, target deletion, tab close, and if naturally available discarded/frozen tab handling. PASS only if stopped/paused/deleted targets do not continue sending and structural tab states do not get mistaken for successful delivery.
+## S11 — fleet viewport / action feedback
+Use enough registered workers to exercise search/filter and at least two pages (10/page is sufficient). PASS only if search/filter/pagination remain usable, Attention surfaces structural error/cooldown/discarded/frozen states, Start/Stop/Retry/Resolve feedback is visibly rendered, popup opens without unintended default vertical scrolling at normal extension-popup viewport, and advanced editors appear as overlays rather than expanding/clipping the default form.
 
 ## Release decision
-
-Release browser gate = PASS only when S1–S8 and S10 pass. S9 may be NOT_OBSERVED if no genuine cooldown occurs, but then cooldown selector validity remains explicitly unverified in release notes. Any FAIL keeps release blocked. Generate/finalize the release ZIP only after this decision is recorded with the tested commit SHA.
+Browser gate PASS requires S1–S8 and S11 PASS. S9 ambiguity and S10 cooldown may be NOT_OBSERVED only when they cannot be safely/naturally produced; each NOT_OBSERVED item remains an explicit release limitation rather than being silently treated as PASS. Any observed FAIL reopens the affected earlier milestone. Final release ZIP is produced only after browser decision is recorded against exact candidate SHA; the M5 candidate artifact remains NON-RELEASE.
