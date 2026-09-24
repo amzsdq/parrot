@@ -1,0 +1,22 @@
+--- a/extension/background.js
++++ b/extension/background.js
+@@
+ function pruneRouteQueue(queue) {
+-  const pending = queue.filter((item) => item.status !== 'delivered');
+-  const delivered = queue
+-    .filter((item) => item.status === 'delivered')
+-    .sort((a, b) => Number(b.deliveredAt || 0) - Number(a.deliveredAt || 0))
+-    .slice(0, Math.max(0, MAX_ROUTE_RECORDS - pending.length));
+-  return [...pending, ...delivered];
++  const active = queue.filter((item) => !['delivered', 'resolved'].includes(item.status));
++  const terminal = queue
++    .filter((item) => ['delivered', 'resolved'].includes(item.status))
++    .sort((a, b) => Number(b.deliveredAt || b.resolvedAt || 0) - Number(a.deliveredAt || a.resolvedAt || 0))
++    .slice(0, Math.max(0, MAX_ROUTE_RECORDS - active.length));
++  return [...active, ...terminal];
+ }
+--- a/extension/manifest.json
++++ b/extension/manifest.json
+@@
+-  "version": "0.8.5",
++  "version": "0.8.6",
