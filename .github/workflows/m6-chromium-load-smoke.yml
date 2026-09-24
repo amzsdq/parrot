@@ -1,0 +1,46 @@
+name: M6 Chromium Load Smoke
+on:
+  push:
+    paths: ['.github/workflows/m6-chromium-load-smoke.yml']
+permissions:
+  contents: read
+jobs:
+  chromium-load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: f51e4ba53753dade3bd3f9a64e2b3c50ca05d691
+      - name: Record browser
+        run: google-chrome --version
+      - name: Launch exact candidate unpacked extension
+        run: |
+          set -euo pipefail
+          EXT="$GITHUB_WORKSPACE/extension"
+          PROFILE="$RUNNER_TEMP/parrot-chrome"
+          xvfb-run -a google-chrome \
+            --no-sandbox \
+            --user-data-dir="$PROFILE" \
+            --disable-extensions-except="$EXT" \
+            --load-extension="$EXT" \
+            --remote-debugging-port=9222 \
+            --no-first-run --no-default-browser-check \
+            about:blank >"$RUNNER_TEMP/chrome.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/chrome.pid"
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:9222/json/version > "$RUNNER_TEMP/version.json"; then break; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/version.json"
+          curl -fsS http://127.0.0.1:9222/json/list > "$RUNNER_TEMP/targets.json"
+          cat "$RUNNER_TEMP/targets.json"
+          grep -Eq 'chrome-extension://[^/]+/(background\.js|popup\.html|dashboard\.html)' "$RUNNER_TEMP/targets.json" || {
+            echo 'No extension target visible through DevTools; Chrome log follows:' >&2
+            cat "$RUNNER_TEMP/chrome.log" >&2
+            exit 1
+          }
+      - name: Candidate binding
+        run: |
+          test "$(git rev-parse HEAD)" = "f51e4ba53753dade3bd3f9a64e2b3c50ca05d691"
+          echo 'PASS: real Chromium loaded an extension target from exact M5 candidate source.'
