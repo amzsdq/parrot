@@ -36,6 +36,7 @@ jobs:
       - run: node scripts/test-runner-registry.mjs
       - run: node scripts/test-dashboard-controls.mjs
       - run: node scripts/test-dashboard-fleet.mjs
+      - run: node scripts/test-popup-ux-contract.mjs
       - run: node scripts/test-chatgpt-adapter-structure.mjs
       - run: node scripts/test-cooldown-storage-contract.mjs
       - run: node scripts/validate-contracts.mjs
