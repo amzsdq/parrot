@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 RESULT=${1:-docs/LIVE_SMOKE_RESULT.md}
 CANDIDATE_SHA=${2:-f51e4ba53753dade3bd3f9a64e2b3c50ca05d691}
 OUT=${3:-parrot-release.zip}
 NOTES=${4:-docs/RELEASE_NOTES_DRAFT.md}
 RELEASE_SHA=$(git rev-parse HEAD)
 
-# Invalidate the only publishability marker synchronously before any delegated
-# helper runs. The complete stale-output cleanup is then executed from frozen
-# RELEASE_SHA tooling below.
 rm -f -- "$OUT.ready"
 cleanup_failed_release() {
   local rc=$?
