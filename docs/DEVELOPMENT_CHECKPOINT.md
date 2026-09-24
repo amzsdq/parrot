@@ -20,7 +20,7 @@ M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (
 - S9/S10 may be explicit NOT_OBSERVED only per checklist; observed FAIL reopens earlier milestone.
 
 ## M7 preparation while browser evidence is pending
-- `docs/RELEASE_NOTES_DRAFT.md` and README candidate install/limitations ready.
+- `docs/RELEASE_NOTES_DRAFT.md` now contains an explicit M6 acceptance contract and a fail-closed final release checklist: authenticated candidate-bound result, S1–S8+S11 PASS, S9/S10 PASS-or-NOT_OBSERVED limitations, machine verifier, no unresolved observed FAIL, M0..M6 DONE, frozen final source SHA, release builder, ZIP integrity/file list/SHA-256, README/artifact identity, durable M7 evidence.
 - `scripts/build-final-release.sh` fail-closes on candidate/source-bound M6 evidence before repository verification and final ZIP/hash/content checks; NOT_OBSERVED limitations must appear in release notes.
 - Route State Contract run `35980587537` succeeded with live-evidence verifier self-test and release-builder syntax gate.
 - Obsolete `.github/workflows/mirror-baton-log.yml` was removed after the BATON layer was retired, reducing dead control-plane surface.
@@ -29,7 +29,8 @@ M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (
 ## Remaining path
 1. Change execution surface for M6-C2 to authenticated interactive Chrome+ChatGPT; do not blind-repeat the invalid headless dashboard/tab-query probe.
 2. Execute M6-C2 onward against exact candidate; fix/retest observed product failures.
-3. M6 PASS -> freeze final source -> fail-closed M7 release builder -> durable PROGRAM_COMPLETE evidence.
+3. While M6 evidence is externally unavailable, continue independent M7 acceptance/documentation hardening without claiming M6/M7 PASS.
+4. M6 PASS -> freeze final source -> fail-closed M7 release builder -> durable PROGRAM_COMPLETE evidence.
 
 ## Scope
 ChatGPT-first. Reliability/simplification/recoverability before feature expansion. Claude/Gemini/Grok remain deferred.
