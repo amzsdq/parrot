@@ -26,8 +26,7 @@ require_pattern "$BUILDER" 'shared candidate-bound live evidence invocation' 've
 require_pattern "$BUILDER" 'release limitation gate' 'verify-release-limitations\.sh "\$GATE_OUTPUT_FILE" "\$NOTES"'
 require_pattern "$BUILDER" 'shared output cleanup invocation' 'prepare-release-output\.sh "\$OUT"'
 require_pattern "$CLEANUP" 'stale artifact cleanup' 'rm -f -- "\$OUT" "\$OUT\.sha256" "\$OUT\.files\.txt" "\$PROVENANCE"'
-require_pattern "$BUILDER" 'archive integrity check' 'unzip -t "\$OUT"'
-require_pattern "$BUILDER" 'artifact checksum' 'sha256sum "\$OUT"'
+require_pattern "$BUILDER" 'shared archive integrity invocation' 'build-release-archive\.sh "\$OUT" "\$VERSION" extension'
 require_pattern "$BUILDER" 'shared provenance writer invocation' 'write-release-provenance\.sh "\$OUT" "\$CANDIDATE_SHA" "\$RELEASE_SHA" "\$RESULT"'
 
-echo 'PASS: final release builder delegates shared preflight/live-evidence/output/provenance gates and retains integrity boundaries.'
+echo 'PASS: final release builder delegates shared preflight/live-evidence/output/archive/provenance gates.'
