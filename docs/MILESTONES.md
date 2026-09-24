@@ -2,100 +2,94 @@
 
 Single durable work-supply/progress authority. No BATON layer.
 
-## Lifecycle and stop gates
-Every milestone passes `PLAN -> BUILD -> VERIFY -> FIX -> VERIFY ... -> DONE`. PLAN defines scope/criteria/evidence/dependencies/path. VERIFY records PASS/FAIL/UNVERIFIED from evidence; UNVERIFIED != PASS. FIX records failure evidence/cause/corrective change. DONE requires every criterion PASS. Never weaken criteria to obtain DONE; regression reopens milestone.
-
-Normal work stops only at `ALL_MILESTONES_DONE` or verified `SUCCESSOR_HANDOFF_COMPLETE`. Criterion/milestone/test/CI/ZIP/checkpoint/14-minute completion is never a stop condition. Premature termination with runnable work is a relay/runtime defect to repair, not a reason to merely report failure and stop again.
+## Lifecycle / stop gates
+Every milestone passes `PLAN -> BUILD -> VERIFY -> FIX -> VERIFY ... -> DONE`. UNVERIFIED != PASS. DONE requires all criteria PASS with durable evidence; regression reopens milestone. Never weaken criteria to get DONE. Normal work stops only at ALL_MILESTONES_DONE or verified SUCCESSOR_HANDOFF_COMPLETE; criterion/milestone/test/CI/ZIP/checkpoint/14-minute completion is never a stop condition. Premature termination with runnable work is a relay/runtime defect to repair, not a reason to report failure and stop again.
 
 ## Milestone board
 
 ### M0 — Product scope and relay contract — DONE
 Phase: DONE
-- M0-C1 PASS — ChatGPT-first scope explicit.
-- M0-C2 PASS — no semantic reading of chat content.
-- M0-C3 PASS — COMPLETE / WAKE / MESSAGE structural routing scope explicit.
-- M0-C4 PASS — Dashboard-first multi-worker and compact-popup direction durable.
-- M0-C5 PASS — milestone/checkpoint/GitHub-server-time evidence model durable.
+- M0-C1 PASS ChatGPT-first scope.
+- M0-C2 PASS no semantic chat-content reading.
+- M0-C3 PASS structural COMPLETE/WAKE/MESSAGE.
+- M0-C4 PASS dashboard-first multi-worker + compact popup direction.
+- M0-C5 PASS milestone/checkpoint/GitHub-server-time evidence model.
 
 ### M1 — Routing and delivery reliability — DONE
 Phase: DONE
-- M1-C1 PASS — exact normalized target URL; unsafe same-origin fallback removed.
-- M1-C2 PASS — structural strong-send receipt.
-- M1-C3 PASS — ambiguous delivery fail-closed; no auto-retry.
-- M1-C4 PASS — explicit Retry / Resolve.
-- M1-C5 PASS — structural parrot.invalid COMPLETE / WAKE / MESSAGE dedupe.
-- M1-C6 PASS — relevant static/integration guards established.
+- M1-C1 PASS exact normalized target; no first-tab fallback.
+- M1-C2 PASS strong structural send receipt.
+- M1-C3 PASS ambiguous fail-closed/no auto-retry.
+- M1-C4 PASS explicit Retry/Resolve.
+- M1-C5 PASS structural signal dedupe.
+- M1-C6 PASS static/integration guards.
 Regression: wrong-target dispatch, automatic ambiguous resend, or semantic chat-content dependency reopens M1.
 
 ### M2 — Runner lifecycle and reload recovery — DONE
 Phase: DONE
-PLAN: deterministic single-effective-runner behavior across startup/reload, storage reconciliation, explicit PARROT_START, mode transitions, cleanup, response delay/sendImmediately. Real Chromium remains M6.
-- M2-C1 PASS — exact-URL auto-arm only.
-- M2-C2 PASS — running interval auto-arm.
-- M2-C3 PASS — response auto-arm only when sendImmediately != false.
-- M2-C4 PASS — deleted/non-running/cross-URL cleanup.
-- M2-C5 PASS — mode transitions fence old runner.
-- M2-C6 PASS — runner-registry harness proves overlap admission, stale-release fence, cleanup, recovery.
-- M2-C7 PASS — response auto-arm preserves delay/sendImmediately semantics.
-- M2-C8 PASS — Actions run 35978969555 exact-head integration/rebuildability suite succeeded.
-Evidence: `extension/runner-registry.js`, `scripts/test-runner-registry.mjs`, runtime seam in `content.js`.
+- M2-C1 PASS exact-URL auto-arm.
+- M2-C2 PASS interval auto-arm.
+- M2-C3 PASS response auto-arm only when sendImmediately != false.
+- M2-C4 PASS deleted/non-running/cross-URL cleanup.
+- M2-C5 PASS mode-transition token fencing.
+- M2-C6 PASS deterministic runner-registry overlap/cleanup/recovery harness.
+- M2-C7 PASS configured response delay/sendImmediately semantics.
+- M2-C8 PASS exact-head integration/rebuildability run 35978969555.
 
 ### M3 — Multi-worker dashboard and structural fleet UX — DONE
 Phase: DONE
-PLAN: deterministic/static dashboard control/fleet acceptance here; actual Chromium visual/interaction smoke remains explicitly M6-C2/M6-C7, avoiding a circular pre-browser gate.
-- M3-C1 PASS — A..Z, AA... identities; no fixed five-worker limit.
-- M3-C2 PASS — Dashboard directly Start/Stops exact matching open ChatGPT worker without activating it; Open remains separate; no first-tab fallback. `scripts/test-dashboard-controls.mjs` passed in Actions run 35979556410 step 24.
-- M3-C3 PASS — fleet states structural-only.
-- M3-C4 PASS — search/filter and 10/25/50 pagination.
-- M3-C5 PASS — tested `dashboard-model.js` is used by runtime; 73-worker search/filter/attention/pagination fixture passed in Actions run 35979556410 step 25.
-- M3-C6 PASS — actionable structural activity labels, visible action feedback, and ambiguous Retry/Resolve controls are guarded by deterministic source/model tests; real UI smoke remains M6-C7. Actions run 35979556410 dashboard/popup UX steps passed.
-Evidence: `extension/dashboard-model.js`, `extension/dashboard.js`, `scripts/test-dashboard-controls.mjs`, `scripts/test-dashboard-fleet.mjs`.
+Static/deterministic gate here; real browser remains M6.
+- M3-C1 PASS scalable A..Z, AA... identities.
+- M3-C2 PASS direct exact-target Dashboard Start/Stop without activating worker tab; Open separate; no fallback.
+- M3-C3 PASS structural-only fleet state.
+- M3-C4 PASS search/filter + 10/25/50 pagination.
+- M3-C5 PASS runtime uses tested dashboard-model; 73-worker fixture.
+- M3-C6 PASS actionable structural labels, visible feedback, ambiguity Retry/Resolve guards.
 
-### M4 — Popup, templates, cooldown, and recovery UX — DONE
+### M4 — Popup, templates, cooldown, recovery UX — DONE
 Phase: DONE
-PLAN: static/contract UX acceptance here; real popup/dashboard viewport and interaction smoke remains M6-C7.
-- M4-C1 PASS — numeric clamps/defaults preserved.
-- M4-C2 PASS — configurable onboarding/completion composition.
-- M4-C3 PASS — rate-limit/transient cooldown policy and persisted structural state.
-- M4-C4 PASS — default popup CSS explicitly prevents default body scrolling; advanced editors are fixed overlays rather than extending default layout; guarded by `test-popup-ux-contract.mjs`.
-- M4-C5 PASS — WAKE/MESSAGE/onboarding configuration surfaces/tokens/validators are present without semantic chat parsing; popup UX contract passed in Actions run 35979556410 step 26.
-- M4-C6 PASS — popup exposes status/error/cooldown surfaces and dashboard maps structural errors/cooldowns to actionable labels; actual visual usability remains M6-C7.
-Note: Actions run 35979556410 later failed only because `test-cooldown-storage-contract.mjs` still expected the pre-refactor dashboard-local cooldown helper; product/dashboard UX steps passed. The guard was corrected at commit `c33447f39397fc482895b7dc781ac917d3bc6f87` and must be green under M5 before candidate acceptance.
+Static/contract gate here; real viewport/interaction remains M6.
+- M4-C1 PASS numeric clamps/defaults.
+- M4-C2 PASS configurable onboarding/completion.
+- M4-C3 PASS persisted structural cooldown/backpressure.
+- M4-C4 PASS compact default overflow contract + overlay editors.
+- M4-C5 PASS WAKE/MESSAGE/onboarding config tokens/validators without semantic parsing.
+- M4-C6 PASS status/error/cooldown surfaces + actionable dashboard labels.
+Evidence includes successful dashboard/fleet/popup UX steps and full corrected suite run 35979625616.
 
-### M5 — Rebuildable candidate package — IN_PROGRESS
-Phase: VERIFY
-PLAN: candidate version v0.8.7; source boundary=`extension/` at one verified repository commit; run complete CI/static suite; create versioned candidate ZIP from that exact source; verify archive manifest/content hashes/rebuildability; label candidate NON-RELEASE until M6 passes.
-- M5-C1 UNVERIFIED — repository source sufficient without hidden local edits.
-- M5-C2 UNVERIFIED — syntax / manifest / contract / integration guards all pass at candidate head.
-- M5-C3 UNVERIFIED — candidate ZIP contents/integrity verified.
-- M5-C4 UNVERIFIED — rebuildability from fresh repository state demonstrated.
-- M5-C5 UNVERIFIED — candidate clearly labeled non-release until M6.
-CURRENT WORK:
-1. Obtain green exact-head CI after corrected cooldown/dashboard guards.
-2. Freeze candidate commit SHA; avoid packaging from a moving head.
-3. Build `parrot-v0.8.7-candidate.zip` from that exact `extension/` tree and record SHA-256/content list.
-4. Re-run rebuildability/integrity evidence against frozen candidate.
-5. Mark NON-RELEASE / M6-required explicitly, then M5 DONE and continue M6 planning/evidence collection.
+### M5 — Rebuildable candidate package — DONE
+Phase: DONE
+PLAN: v0.8.7 candidate built from exact fresh checkout `extension/` source; full suite + repository verification; deterministic ZIP integrity/version/content evidence; NON-RELEASE until M6.
+- M5-C1 PASS — Actions fresh checkout plus `verify-repo.mjs` proves repository source/references are self-contained for candidate build.
+- M5-C2 PASS — exact candidate workflow head `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`, Actions run `35979821480`, completed SUCCESS across syntax, contracts, runner/dashboard/popup fixtures, cooldown, v0.8.7 integration, and repository verification.
+- M5-C3 PASS — workflow `Build candidate ZIP` succeeded: `zip -X`, `unzip -t`, sorted file list, SHA-256 generation, and manifest version 0.8.7 check all passed before artifact upload.
+- M5-C4 PASS — candidate was built inside the same fresh Actions checkout after repository verification; no local hidden source is involved.
+- M5-C5 PASS — uploaded artifact is explicitly named `parrot-v0.8.7-candidate-NON-RELEASE-f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`; artifact id `10798948865`, Actions artifact digest `sha256:ca6ece70268ebf304cdab16260515911eeea45b6b67d44d981238c93bfdb251c`, expires 2026-10-08. README/checklist also state M6 is mandatory before release.
+Note: artifact digest above is the GitHub Actions artifact archive digest; the inner candidate ZIP SHA-256 is generated and included inside the uploaded evidence bundle as `candidate.sha256`.
 
-### M6 — Real Chromium + ChatGPT validation — PENDING
+### M6 — Real Chromium + ChatGPT validation — IN_PROGRESS
 Phase: PLAN
-PLAN: execute `docs/LIVE_SMOKE_CHECKLIST.md` on actual Chromium + ChatGPT. Static CI never substitutes.
-- M6-C1 UNVERIFIED — unpacked extension loads.
-- M6-C2 UNVERIFIED — dashboard controls non-active exact matching ChatGPT tabs.
+PLAN: execute `docs/LIVE_SMOKE_CHECKLIST.md` against the exact candidate source commit. Static CI never substitutes. The checklist now covers dashboard exact-target Start/Stop, strong receipt, response/interval modes, configured delay/sendImmediately=false, reload/single-runner fencing, COMPLETE/WAKE/MESSAGE, ambiguity, structural cooldown, fleet/action feedback, and popup viewport.
+- M6-C1 UNVERIFIED — unpacked extension loads in real Chromium.
+- M6-C2 UNVERIFIED — Dashboard controls non-active exact matching ChatGPT tabs.
 - M6-C3 UNVERIFIED — response/interval modes work in real ChatGPT DOM.
 - M6-C4 UNVERIFIED — reload recovery/duplicate-runner fence works.
-- M6-C5 UNVERIFIED — COMPLETE / WAKE / MESSAGE runId routing works.
-- M6-C6 UNVERIFIED — ambiguity Retry/Resolve without duplicate-send regression.
+- M6-C5 UNVERIFIED — COMPLETE/WAKE/MESSAGE runId routing works.
+- M6-C6 UNVERIFIED — ambiguity Retry/Resolve without duplicate-send regression; may remain NOT_OBSERVED only if safe ambiguity cannot naturally occur and must then be explicit release limitation.
 - M6-C7 UNVERIFIED — popup/dashboard viewport and larger-fleet UX smoke.
-- M6-C8 UNVERIFIED — failures reopen affected earlier milestone.
+- M6-C8 UNVERIFIED — any observed failure reopens affected earlier milestone rather than being waived.
+CURRENT WORK:
+1. Prepare exact, low-risk live evidence procedure/result template bound to candidate SHA `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`.
+2. Execute real Chromium+ChatGPT smoke when a browser execution surface is available; never fabricate PASS from static evidence.
+3. While waiting for that external execution surface, continue independent safe M7 preparation (release instructions/limitations) without marking M6 or M7 DONE.
 
 ### M7 — First release delivery — PENDING
 Phase: PLAN
-- M7-C1 UNVERIFIED — M0..M6 all criteria PASS.
-- M7-C2 UNVERIFIED — final versioned ZIP from verified state.
+- M7-C1 UNVERIFIED — M0..M6 all PASS.
+- M7-C2 UNVERIFIED — final release ZIP from verified state.
 - M7-C3 UNVERIFIED — README/run instructions match behavior.
 - M7-C4 UNVERIFIED — limitations/deferred adapters explicit.
 - M7-C5 UNVERIFIED — PROGRAM_COMPLETE only after durable evidence.
 
 ## Work selection
-Read this file first; take earliest non-DONE milestone and first FAIL/UNVERIFIED criterion; continue its phase. Criterion PASS => next criterion immediately. Milestone DONE => next milestone immediately. Never create BATON/TODO/STATE work authority.
+Read this file first; take earliest non-DONE milestone and first FAIL/UNVERIFIED criterion. Criterion PASS => next criterion immediately. Milestone DONE => next milestone immediately. If current criterion waits on external evidence, do independent safe preparation that advances later acceptance without falsely closing the blocked criterion. Never create BATON/TODO/STATE work authority.
