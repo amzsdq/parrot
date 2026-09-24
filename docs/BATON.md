@@ -5,49 +5,48 @@ Keep ONLY the latest baton here. Historical baton snapshots belong in `docs/DEVE
 
 CURRENT_VERSION=v0.8.6
 STATUS=CONTINUE
-WORK_PACKAGE_ID=PARROT-BATON-003
-PACKAGE_KIND=EXACT_POPUP_REPAIR_AND_RECONSTRUCTION_BOOTSTRAP
+WORK_PACKAGE_ID=PARROT-BATON-004
+PACKAGE_KIND=ROUTE_STATE_INTEGRATION_AND_POPUP_WRITE_RECOVERY
 EXPECTED_ACTIVE_MINUTES=14
 NEXT_WAKE_DELAY_MINUTES=14
 SHORT_PACKAGE_REASON=NONE
 WORK_TIME_MARKER_ISSUE=amzsdq/parrot#1
 
 CURRENT_TASK=
-Use the recovered v0.8.0 Library artifact to repair popup.js to its exact v0.8.6 target bytes, then spend remaining package capacity bootstrapping the evidence-based v0.8.7 runtime reconstruction path if exact later runtime bytes remain unavailable.
+Integrate the newly added deterministic v0.8.7 route-state primitives into production runtime in one coherent slice, while preserving the recovered exact popup.js bytes as authoritative evidence and finding a reliable connector path for that exact replacement.
 
-RECOVERED_SOURCE=
-Library artifact `parrot_extension_v0.8.0.zip`, size 36,229 bytes, SHA-256 4c9d27a0e866fe60802f19717a962034dbfc7c1ba873d116359e4566075dc1ef. Materialized popup.js is 21,960 bytes and Git blob 04b3a2b425f37ee33de2b7194bd7dbea8aaa93da, EXACTLY the recorded v0.8.6 popup.js target. popup.css and popup.html from the same artifact also match their v0.8.6 target blobs, confirming this popup source lineage.
+COMPLETED_PREVIOUS=
+- Re-materialized Library `parrot_extension_v0.8.0.zip` and re-verified recovered popup.js: 21,960 bytes, `node --check` passes, Git blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`.
+- Direct `update_file` cannot consume a local file path; Git tree reuse of SHA 04b3... failed 422 because the local Git blob is not yet an object in this GitHub repository. Do not hand-copy or guess the authoritative file merely to force the write.
+- Added `extension/route-state.js` with strong receipt classification, ambiguity fencing/reconciliation, manual retry/resolve, active-preserving terminal pruning, and structural discarded/frozen classification.
+- Added `scripts/test-route-state.mjs` covering the deterministic vectors in `tests/route-state-contract.json`, including Chrome frozen-property-unsupported semantics.
 
 NEXT_ACTION=
-1. Locate/materialize Library `parrot_extension_v0.8.0.zip`; verify its popup.js Git blob is `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da` before writing.
-2. Replace repository `extension/popup.js` from those authoritative bytes. Because GitHub text write does not accept a local path, read the local source in bounded chunks if needed, then perform one complete replacement; do not hand-edit/guess the 53 missing bytes.
-3. Re-fetch repository popup.js and require exact Git blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`; run `node --check` on the recovered local source. Only then mark popup.js migration complete.
-4. If capacity remains, use `docs/RECONSTRUCTION_PLAN_v0.8.7.md` plus recovered v0.8.0 runtime source to begin a NEW v0.8.7 reconstruction path. Do not copy v0.8.0 background/content/dashboard and label them v0.8.6: v0.8.0 demonstrably predates strong user-message-count receipts, durable ambiguity outbox, manual retry/resolve, and ambiguity fencing.
-5. Prefer the first reconstruction slice that creates testable strong-receipt/route-state primitives; keep product code changes coherent and verifiable.
-6. Hand off another preferred ~14-minute useful package.
+1. Run `node scripts/test-route-state.mjs` against fresh main through an available executable checkout/runtime; fix any deterministic failure before wiring production.
+2. Wire `route-state.js` into the appropriate runtime surfaces without duplicating state-machine logic. Preserve ChatGPT-first and no semantic chat-content inspection.
+3. First production slice should make periodic dispatch accept only `pending`, make ambiguity reconciliation state-only, and preserve manual retry/resolve boundaries. Do not attempt all dashboard UX in one uncontrolled change.
+4. Add/extend deterministic tests around the actual wired production functions, not only the standalone model.
+5. For exact popup.js, prefer a byte-preserving GitHub write path that can accept the materialized file/blob. If unavailable, keep the exact local artifact/hash evidence and do not falsely mark repo popup exact.
+6. Run repository syntax/rebuildability gates for files changed and hand off another ~14-minute package.
 
 DONE_CRITERIA=
-- popup.js repository blob exactly equals 04b3a2b425f37ee33de2b7194bd7dbea8aaa93da, OR the exact connector limitation preventing the authoritative-byte write is demonstrated without modifying source incorrectly.
-- No v0.8.0 runtime file is mislabeled as exact v0.8.6.
-- Any v0.8.7 reconstruction work follows the durable plan and has targeted verification.
-- Next baton is another useful ~14-minute package unless genuinely externally gated.
+- Standalone route-state contract runner has actual execution evidence, not merely source existence.
+- At least one production runtime path uses the shared route-state primitive with deterministic regression evidence, OR a precise integration blocker is recorded.
+- Ambiguous records cannot enter automatic dispatch through the integrated slice.
+- No reconstructed v0.8.0 runtime is mislabeled byte-exact v0.8.6.
+- Exact popup evidence remains preserved until a byte-preserving connector write succeeds.
 
 DO_NOT_REPEAT=
-- broad Library semantic search for v0.8.6; recent Library listing already established only v0.8.0 is retained among v0.8.x artifacts
-- manifest.json exact migration
-- chatgpt-adapter.js exact migration
-- dashboard.html exact migration
-- dashboard.css exact migration
-- popup.css exact migration
-- popup.html exact migration
-- v0.8.6 terminal-history pruning implementation
-- background.js nine-line historical stub (commit 8baedeb) — known incomplete
+- broad Library search for v0.8.6
+- re-investigate popup.js 53-byte cause; authoritative v0.8.0 popup bytes already match target blob
+- manifest.json/chatgpt-adapter.js/dashboard.html/dashboard.css/popup.css/popup.html exact migrations
+- background.js nine-line historical stub
 
 BLOCKER=
-Full v0.8.6 background.js/content.js/dashboard.js bytes remain unavailable. This no longer blocks popup.js because its exact target bytes were recovered from v0.8.0. For the missing runtime trio, either recover later exact bytes or reconstruct deliberately as v0.8.7 per docs/RECONSTRUCTION_PLAN_v0.8.7.md.
+Exact v0.8.6 background.js/content.js/dashboard.js bytes remain unavailable. Exact popup.js bytes ARE available locally, but the current GitHub text connector exposes string replacement rather than a local-file parameter; do not compromise byte certainty. Continue v0.8.7 reconstruction for the missing runtime trio.
 
 SCHEDULER_RULE=
-Preferred/default NEXT_WAKE_DELAY_MINUTES is 14 to minimize idle time. Shorter is exceptional and requires a concrete unavoidable SHORT_PACKAGE_REASON.
+Preferred/default NEXT_WAKE_DELAY_MINUTES is 14. Shorter is exceptional and requires a concrete unavoidable SHORT_PACKAGE_REASON.
 
 MEASUREMENT_RULE=
-Use amzsdq/parrot issue #1. Create WAKE/START/END comments per session. Fetch each returned comment id directly through GitHub REST `/repos/amzsdq/parrot/issues/comments/<id>` for authoritative created_at because aggregate comment listing may return null. Compute SESSION_ELAPSED=END-WAKE and WORKED=END-START only from those server timestamps.
+Use issue #1 WAKE/START/END comments and direct REST fetch of each returned comment id. GitHub created_at is the sole timing authority.
