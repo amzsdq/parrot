@@ -20,6 +20,7 @@ jobs:
       - run: node --check extension/signal-scanner.js
       - run: node --check extension/prompt-compose.js
       - run: node --check extension/repeat-policy.js
+      - run: node --check extension/chatgpt-adapter.js
       - run: node --check extension/background.js
       - run: node --check extension/content.js
       - run: node scripts/test-route-state.mjs
@@ -27,6 +28,7 @@ jobs:
       - run: node scripts/test-signal-protocol.mjs
       - run: node scripts/test-prompt-compose.mjs
       - run: node scripts/test-repeat-policy.mjs
+      - run: node scripts/test-chatgpt-adapter-structure.mjs
       - run: node scripts/validate-contracts.mjs
       - run: node scripts/validate-v087-integration.mjs
       - run: node scripts/verify-repo.mjs
