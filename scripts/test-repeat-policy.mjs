@@ -1,0 +1,4 @@
+import assert from 'node:assert/strict';import{createRequire}from'node:module';const require=createRequire(import.meta.url),p=require('../extension/repeat-policy.js');
+assert.deepEqual([0,1,2,3,4].map(i=>p.cooldownMinutes('rate_limit',i)),[10,20,40,60,60]);
+assert.deepEqual([0,1,2,3,4].map(i=>p.cooldownMinutes('transient',i)),[2,5,10,20,20]);
+const now=1_000_000;assert.equal(p.stopReason({status:'running',maxRepeats:2,sentCount:2,runtimeMin:0},now),'max_repeats');assert.equal(p.stopReason({status:'running',maxRepeats:0,sentCount:0,runtimeMin:1,startedAt:now-60000},now),'runtime_limit');assert.equal(p.intervalDue({status:'running',intervalMin:2,lastSentAt:now-120000,maxRepeats:0,runtimeMin:0},now),true);assert.equal(p.intervalDue({status:'running',intervalMin:2,lastSentAt:now-119999,maxRepeats:0,runtimeMin:0},now),false);console.log('PASS: repeat policy vectors');
