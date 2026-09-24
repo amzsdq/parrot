@@ -20,9 +20,10 @@ M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (
 - S9/S10 may be explicit NOT_OBSERVED only per checklist; observed FAIL reopens earlier milestone.
 
 ## M7 preparation while browser evidence is pending
-- `scripts/verify-live-smoke-result.mjs` now validates environment provenance, required case evidence, S9/S10 explicit limitation handling, decision-summary consistency, and UTC decision time. The first hardened run exposed an outdated self-test fixture rather than a product failure; fixture was repaired. Exact-head Route State Contract run `35983716086` for `49a9da4fecdc9afa2fd99bc45fba311cebe3246b` completed SUCCESS.
-- A release-provenance flaw was found and corrected: the old final builder passed current repository HEAD as the expected M6 candidate SHA, which conflicts with legitimate docs/release-tooling commits after M5. `scripts/build-final-release.sh` now verifies live evidence against exact M6 candidate `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`, independently records release-repository SHA, and fail-closes if current `extension/` differs from the candidate tree. Any post-candidate extension change therefore forces a new candidate + fresh M6 instead of silently shipping untested product bytes.
-- `docs/RELEASE_NOTES_DRAFT.md` and README document the same candidate-tree identity rule and provenance requirements.
+- `scripts/verify-live-smoke-result.mjs` validates environment provenance, required case evidence, S9/S10 explicit limitation handling, decision-summary consistency, and UTC decision time. Exact-head Route State Contract run `35983716086` for `49a9da4fecdc9afa2fd99bc45fba311cebe3246b` completed SUCCESS.
+- Final builder is bound to exact M6 candidate `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`, records release-repository SHA separately, and fail-closes if committed `extension/` differs from candidate. Independent compare through main `584d25633a4d320ed73f27a900098fa46b4006e2` is 39 commits ahead with no `extension/` changed files; current manifest blob SHA also exactly matches candidate.
+- Additional release hardening at `dd128d09ea3476775b5838ee0ca213d89ec5a69f`: final builder now rejects staged, unstaged, or untracked `extension/` changes before packaging, restricts output to `.zip`, and removes stale provenance before rebuilding. This closes the gap where a dirty working tree could otherwise package bytes not represented by the recorded release repository SHA. CI for this exact commit was not yet visible at checkpoint time; do not call that hardening verified until a matching run succeeds.
+- `docs/RELEASE_NOTES_DRAFT.md` and README document candidate-tree identity and provenance requirements. GitHub Releases remains empty; no release was accidentally published.
 - Obsolete `.github/workflows/mirror-baton-log.yml` was removed after the BATON layer was retired.
 - No final release ZIP or PROGRAM_COMPLETE before M6.
 
@@ -30,7 +31,8 @@ M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (
 1. Change execution surface for M6-C2 to authenticated interactive Chrome+ChatGPT; do not blind-repeat the invalid headless dashboard/tab-query probe.
 2. Execute M6-C2 onward against exact candidate; fix/retest observed product failures.
 3. While M6 evidence is externally unavailable, continue independent M7 acceptance/documentation hardening without claiming M6/M7 PASS.
-4. M6 PASS -> verify current `extension/` equals M6 candidate tree -> freeze release-repository SHA -> fail-closed M7 release builder -> durable PROGRAM_COMPLETE evidence.
+4. Verify CI for release-hardening commit `dd128d09...`; if it fails, fix/retest rather than waiving.
+5. M6 PASS -> verify current `extension/` equals M6 candidate tree -> freeze release-repository SHA -> fail-closed M7 release builder -> durable PROGRAM_COMPLETE evidence.
 
 ## Scope
 ChatGPT-first. Reliability/simplification/recoverability before feature expansion. Claude/Gemini/Grok remain deferred.
