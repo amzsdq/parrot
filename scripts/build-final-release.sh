@@ -13,22 +13,13 @@ case "$OUT" in
   *) echo "FAIL: release output must end in .zip" >&2; exit 1 ;;
 esac
 
-if ! git diff --quiet -- extension || ! git diff --cached --quiet -- extension || [ -n "$(git ls-files --others --exclude-standard -- extension)" ]; then
-  echo "FAIL: working tree contains uncommitted/untracked extension changes; commit a new candidate and repeat M6" >&2
-  git status --short -- extension >&2
-  exit 1
-fi
+bash scripts/verify-release-preflight.sh "$CANDIDATE_SHA"
 
 echo "Verifying live browser evidence for candidate $CANDIDATE_SHA"
 GATE_OUTPUT=$(node scripts/verify-live-smoke-result.mjs "$RESULT" "$CANDIDATE_SHA")
 echo "$GATE_OUTPUT"
 LIVE_RESULT_SHA256=$(sha256sum "$RESULT" | awk '{print $1}')
 
-if ! git diff --quiet "$CANDIDATE_SHA" -- extension; then
-  echo "FAIL: extension/ differs from M6 candidate $CANDIDATE_SHA; create a new candidate and repeat M6" >&2
-  git diff --name-only "$CANDIDATE_SHA" -- extension >&2
-  exit 1
-fi
 echo "PASS: release extension tree is identical to M6 candidate $CANDIDATE_SHA (release repo $RELEASE_SHA)"
 
 GATE_OUTPUT_FILE=$(mktemp)
