@@ -6,13 +6,11 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 git clone -q "$ROOT" "$TMP/repo"
 cd "$TMP/repo"
+git config user.name parrot-test
+git config user.email parrot-test@example.invalid
 
 LOG=$TMP/calls.log
 export PARROT_TEST_LOG=$LOG
-# This orchestration suite replaces helpers with executable stubs to exercise
-# failure propagation. Production never sets this; tooling-freeze behavior is
-# covered separately by test-release-tooling-snapshot.sh.
-export PARROT_TEST_USE_WORKTREE_TOOLING=1
 
 stub() {
   local path=$1 name=$2 body=${3:-}
@@ -37,7 +35,13 @@ install_success_stubs() {
   stub scripts/publish-release-ready.sh publish 'touch "$1.ready"'
 }
 
+commit_fixture() {
+  git add scripts
+  git commit -q --amend --no-edit
+}
+
 install_success_stubs
+commit_fixture
 OUT=$TMP/release.zip
 RESULT=$TMP/live-result.md
 printf 'verified evidence bytes\n' > "$RESULT"
@@ -65,6 +69,7 @@ printf 'original evidence\n' > "$RESULT"
 export PARROT_MUTABLE_RESULT=$RESULT
 stub scripts/verify-candidate-live-evidence.sh live-evidence 'printf "changed after snapshot\n" > "$PARROT_MUTABLE_RESULT"; echo "PASS: fake candidate-bound evidence"'
 stub scripts/write-release-provenance.sh provenance 'grep -Fxq "original evidence" "$4" || { echo "FAIL: provenance did not receive verified snapshot bytes" >&2; exit 41; }; touch "$1.provenance.txt"'
+commit_fixture
 bash scripts/build-final-release.sh "$RESULT" HEAD "$TMP/toctou.zip" docs/RELEASE_NOTES_DRAFT.md >/dev/null
 [[ $(cat "$RESULT") == 'changed after snapshot' ]] || { echo 'FAIL: mutation fixture did not execute' >&2; exit 1; }
 
@@ -73,6 +78,7 @@ assert_blocked_at() {
   install_success_stubs
   : > "$LOG"
   stub "$script" "$gate" "exit $code"
+  commit_fixture
   local blocked_out="$TMP/blocked-$gate.zip"
   if [[ $stale == yes ]]; then
     touch "$blocked_out.ready" "$blocked_out" "$blocked_out.sha256" "$blocked_out.files.txt" "$blocked_out.provenance.txt"
@@ -101,4 +107,4 @@ assert_blocked_at scripts/build-release-archive.sh archive 27 7
 assert_blocked_at scripts/write-release-provenance.sh provenance 28 8
 assert_blocked_at scripts/publish-release-ready.sh publish 31 9
 
-echo 'PASS: final release builder publishes readiness last, invalidates it first, propagates every gate failure, and leaves no misleading publishable state.'
+echo 'PASS: final release builder executes committed frozen tooling, publishes readiness last, propagates every gate failure, and leaves no misleading publishable state.'
