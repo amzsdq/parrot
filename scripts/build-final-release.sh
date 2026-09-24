@@ -24,6 +24,7 @@ fi
 echo "Verifying live browser evidence for candidate $CANDIDATE_SHA"
 GATE_OUTPUT=$(node scripts/verify-live-smoke-result.mjs "$RESULT" "$CANDIDATE_SHA")
 echo "$GATE_OUTPUT"
+LIVE_RESULT_SHA256=$(sha256sum "$RESULT" | awk '{print $1}')
 
 # M6 validates the candidate extension tree, not arbitrary later product edits.
 # Docs/release-tooling may advance after M5, but any extension/ change requires a
@@ -48,5 +49,5 @@ unzip -t "$OUT"
 unzip -Z1 "$OUT" | LC_ALL=C sort > "$OUT.files.txt"
 sha256sum "$OUT" | tee "$OUT.sha256"
 unzip -p "$OUT" manifest.json | grep -F "\"version\": \"$VERSION\""
-printf 'candidate_sha=%s\nrelease_repo_sha=%s\n' "$CANDIDATE_SHA" "$RELEASE_SHA" > "$PROVENANCE"
-echo "PASS: final release artifact built only after candidate-bound live evidence, candidate-tree identity, and limitation gates."
+printf 'candidate_sha=%s\nrelease_repo_sha=%s\nlive_result_sha256=%s\n' "$CANDIDATE_SHA" "$RELEASE_SHA" "$LIVE_RESULT_SHA256" > "$PROVENANCE"
+echo "PASS: final release artifact built only after candidate-bound authenticated live evidence, candidate-tree identity, and limitation gates."
