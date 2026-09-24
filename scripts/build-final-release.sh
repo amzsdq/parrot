@@ -7,6 +7,16 @@ OUT=${3:-parrot-v${VERSION}.zip}
 NOTES=${4:-docs/RELEASE_NOTES_DRAFT.md}
 RELEASE_SHA=$(git rev-parse HEAD)
 
+# Invalidate any previous publishable-looking output before this attempt starts.
+# A failed attempt must never leave artifacts that can be mistaken for its result.
+bash scripts/prepare-release-output.sh "$OUT"
+cleanup_failed_release() {
+  local rc=$?
+  rm -f -- "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt"
+  exit "$rc"
+}
+trap cleanup_failed_release ERR
+
 bash scripts/verify-release-preflight.sh "$CANDIDATE_SHA"
 
 echo "Verifying live browser evidence for candidate $CANDIDATE_SHA"
@@ -22,16 +32,6 @@ bash scripts/verify-release-limitations.sh "$GATE_OUTPUT_FILE" "$NOTES"
 rm -f "$GATE_OUTPUT_FILE"
 trap - EXIT
 
-# From this point onward, no failure may leave release-looking state from a
-# previous build. Clear it before repository verification, then keep the same
-# cleanup invariant across every later gate.
-bash scripts/prepare-release-output.sh "$OUT"
-cleanup_failed_release() {
-  local rc=$?
-  rm -f -- "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt"
-  exit "$rc"
-}
-trap cleanup_failed_release ERR
 bash scripts/verify-release-repository.sh
 bash scripts/build-release-archive.sh "$OUT" "$VERSION" extension
 bash scripts/write-release-provenance.sh "$OUT" "$CANDIDATE_SHA" "$RELEASE_SHA" "$RESULT"
