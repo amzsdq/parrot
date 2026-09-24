@@ -8,7 +8,7 @@
   "background": { "service_worker": "background.js" },
   "content_scripts": [{
     "matches": ["https://chatgpt.com/*"],
-    "js": ["route-state.js", "chatgpt-adapter.js", "signal-scanner.js", "content.js"],
+    "js": ["route-state.js", "chatgpt-adapter.js", "signal-scanner.js", "prompt-compose.js", "repeat-policy.js", "content.js"],
     "run_at": "document_idle"
   }],
   "action": { "default_title": "앵무새", "default_popup": "popup.html" }
