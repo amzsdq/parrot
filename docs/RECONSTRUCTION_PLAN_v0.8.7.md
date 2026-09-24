@@ -1,34 +1,37 @@
 # Parrot v0.8.7 runtime reconstruction plan
 
-Status: implementation candidate; use only if exact v0.8.6 runtime bytes remain unavailable.
+Status: IMPLEMENTED THROUGH M5 CANDIDATE. Historical design rationale below is retained for reconstruction provenance; current work/progress authority is `docs/MILESTONES.md`.
 
-## Why a new version
+## Why v0.8.7 exists
 
-The v0.8.0 artifact is now recoverable and gives authoritative historical source for `background.js`, `content.js`, and `dashboard.js`, but it predates the v0.8.6 reliability contract. Copying those files into `main` and calling them v0.8.6 would be false certification. If later exact artifacts cannot be recovered, reconstruct the missing runtime deliberately as v0.8.7, preserving verified behavior and adding regression evidence.
+The recovered v0.8.0 artifact supplied authoritative historical source for core runtime behavior but predates the later reliability contract. Exact later v0.8.6 runtime bytes were not recovered, so copying older files and calling them byte-exact v0.8.6 would have been false certification. The missing runtime was therefore deliberately reconstructed as v0.8.7 with deterministic regression evidence.
 
-## Evidence
+## Reconstruction invariants implemented before candidate freeze
 
-Recovered v0.8.0 behavior:
-- background queue has `pending` / `delivered` and periodic processing redispatches any non-delivered item after `ROUTE_REDISPATCH_MS`;
-- content `tryDeliverRoute()` clicks send and `waitForDispatchReceipt()` accepts `isGenerating()`, composer-cleared, or composer-changed as receipt;
-- content then emits `PARROT_ROUTE_DELIVERED`; failure to notify background is swallowed locally;
-- no durable ambiguity outbox was found;
-- v0.8.0 dashboard has no ambiguity retry/resolve controls.
+- Provider access remains behind `globalThis.ParrotSiteAdapter`; current implementation is ChatGPT-first.
+- Strong send receipt requires structural acceptance evidence: user-message count increase or assistant generation start. Composer clearing/changing alone is not delivery proof.
+- Send attempted without strong receipt becomes `ambiguous`; ambiguity is persisted to a bounded local outbox before transient background notification and is locally fenced from automatic resend.
+- Background reconciliation is state-only. Periodic processing auto-dispatches only `pending`; `ambiguous`, `resolved`, and `delivered` are fenced.
+- Manual Retry is the explicit `ambiguous -> pending` authorization path; Resolve is terminal without pretending delivery was proven.
+- Active route records are retained even beyond the nominal history cap; remaining capacity holds newest delivered/resolved terminal history.
+- Dashboard uses canonical structural tab classification and distinguishes not-open/discarded/frozen without chat semantics.
+- Response and interval runners use policy/registry fencing so startup/reload, storage reconciliation, explicit start, and mode transitions cannot create a second effective runner for one target.
+- Prompt composition injects first-send onboarding once per run and the exact run-bound COMPLETE URL according to configuration.
+- Structural COMPLETE/WAKE/MESSAGE scanning uses `parrot.invalid` anchor hrefs and durable signal dedupe; surrounding assistant/user prose is not semantically read.
+- Rate-limit and transient cooldown ladders are deterministic and shared by repeat/routed-send handling.
+- Dashboard fleet controls, popup configuration, numeric clamps, status surfaces, and ambiguity controls are covered by deterministic repository tests.
 
-Later-source clue already exact in repository:
-- v0.8.6 `chatgpt-adapter.js` adds `getUserMessageCount()` relative to recovered v0.8.0. This directly supports replacing weak composer-cleared/changed receipt inference with user-message-count/generation structural evidence.
+## Exact candidate evidence
 
-Verified v0.8.6 contract from durable checkpoint:
-- normal repeat-send and WAKE/MESSAGE delivery use strong structural receipts;
-- unconfirmed route delivery becomes `ambiguous` and is fenced from automatic retry;
-- ambiguity receipt is persisted to bounded `chrome.storage.local` outbox before transient background messaging;
-- background reconciliation changes state only and never blindly redelivers;
-- dashboard exposes explicit manual retry and resolve controls;
-- terminal pruning treats both `delivered` and `resolved` as terminal history;
-- active records are not discarded merely to satisfy history cap;
-- Chat semantic content is not used for fleet state or delivery decisions.
+- M5 candidate source: `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`.
+- Candidate Actions run: `35979821480` SUCCESS.
+- NON-RELEASE artifact: `10798948865`.
+- Actions artifact digest: `sha256:ca6ece70268ebf304cdab16260515911eeea45b6b67d44d981238c93bfdb251c`.
+- M6-C1 real-Chrome load evidence: run `35980470638` SUCCESS.
 
-## Target route state machine
+The exact candidate is the product identity for M6. Documentation/evidence/release-tooling commits may advance afterward, but any `extension/` change requires a new candidate and fresh M6 validation.
+
+## Historical route state machine
 
 ```text
 pending
@@ -38,78 +41,40 @@ pending
 ambiguous
   -> pending            explicit manual retry
   -> resolved           explicit operator resolve
-  -> delivered          reconciliation evidence proves delivery
+  -> delivered          later strong receipt/reconciliation evidence
 
 resolved / delivered
   -> terminal history; never automatic redispatch
 ```
 
-Hard rule: `ambiguous` is not a retry state. Periodic queue processing must skip it.
+Hard rule retained in the implementation: `ambiguous` is not an automatic retry state.
 
-## content.js reconstruction
+## Regression evidence represented in the candidate
 
-1. Start from recovered v0.8.0 content source, not prose.
-2. Keep provider access behind `globalThis.ParrotSiteAdapter`.
-3. Before route send, capture `beforeUserCount = siteAdapter.getUserMessageCount()` and generation state.
-4. Set composer text, obtain enabled send button, click once.
-5. Strong receipt succeeds only if post-send structural evidence proves acceptance: user-message count increases OR assistant generation begins. Composer clearing/changing alone is not sufficient.
-6. If the click/send attempt occurred but strong receipt times out, create an ambiguity receipt containing queue id and structural/timing metadata only; never chat semantics.
-7. BEFORE transient `chrome.runtime.sendMessage` about ambiguity, persist that receipt in a bounded `chrome.storage.local` outbox.
-8. Background acknowledgement may remove/mark the outbox record. Notification failure must leave durable evidence for later reconciliation.
-9. Locally fence the queue id after an ambiguous send so the content retry timer cannot click/send it again.
-10. Do not parse assistant semantic text for route delivery.
+The repository test suite and integration guard cover, among other cases:
 
-## background.js reconstruction
+1. strong receipt by user-message count increase;
+2. strong receipt by assistant generation start;
+3. composer-only change is not proof;
+4. bounded ambiguity outbox and acknowledgement;
+5. reconciliation without redelivery;
+6. periodic pending-only dispatch;
+7. one explicit manual retry authorization;
+8. manual terminal resolve;
+9. active-preserving route pruning;
+10. discarded/frozen structural classification;
+11. exact-target dashboard controls and fleet pagination/search/filter;
+12. prompt composition and run-bound completion signal;
+13. response/interval runner policy and token fencing;
+14. cooldown ladders and structural cooldown boundary;
+15. repository/manifest/ZIP reconstruction gates.
 
-1. Add durable route receipt reconciliation message handling.
-2. Queue states include at least `pending`, `ambiguous`, `delivered`, `resolved`.
-3. Periodic queue processing may dispatch only eligible `pending` records. Never automatically redispatch `ambiguous`, `resolved`, or `delivered`.
-4. Reconciliation of a persisted ambiguity receipt updates queue state only; it never sends the route again.
-5. Manual retry transitions the selected ambiguous item back to an explicitly dispatchable state and performs one operator-authorized attempt.
-6. Manual resolve records `resolvedAt` and terminal state without pretending delivery was proven.
-7. Pruning:
-   - active = status not in `delivered`, `resolved`;
-   - terminal = delivered/resolved newest first by `deliveredAt || resolvedAt`;
-   - retain every active item even when active count exceeds `MAX_ROUTE_RECORDS`;
-   - terminal history uses only remaining capacity.
-8. Snapshot exposes structural tab reachability, discarded/frozen state, route status, cooldown/error, and run state without chat semantics.
+## Remaining validation boundary
 
-## dashboard.js reconstruction
+This reconstruction plan is no longer an implementation work list. The remaining release blocker is M6 authenticated real ChatGPT behavior. Static tests and the M6-C1 extension-page load cannot establish composer/send/generation/reload/routing/dashboard behavior inside an authenticated ChatGPT session.
 
-1. Bind current exact dashboard HTML, including worker search/filter, 10/25/50 pagination, route Action column, and worker actions.
-2. Show `ambiguous` as operator attention, not ordinary pending.
-3. Route Action column:
-   - ambiguous: Retry + Resolve;
-   - pending: no blind retry control unless explicitly designed;
-   - delivered/resolved: terminal display.
-4. Worker state distinguishes closed/not-open from `discarded` / `frozen` using structural `chrome.tabs.Tab` properties. Chrome documents `discarded` from Chrome 54 and `frozen` from Chrome 132; treat `frozen === undefined` as unsupported/unknown on older Chrome rather than false evidence that the tab is definitely not frozen. Chrome also documents that a frozen tab cannot execute tasks/event handlers/timers, while messages to it are queued until unfreeze, so dashboard status must not misclassify a frozen tab as ordinary content-script failure.
-5. Dashboard actions address the matching target tab directly and must not depend on dashboard being the active tab.
-
-## Regression gates before release
-
-`tests/route-state-contract.json` records deterministic contract vectors. It is specification evidence only until production code is wired to a runner; do not report it as passing production tests merely because the JSON exists.
-
-Required deterministic tests:
-1. pending -> delivered when user-message count increases.
-2. pending -> delivered when assistant generation begins even if count update lags.
-3. composer clears/changes without either strong signal -> ambiguous, not delivered.
-4. ambiguous survives transient background-message failure through persisted outbox.
-5. background reconciliation of ambiguity changes state without redelivery.
-6. periodic processor never dispatches ambiguous.
-7. manual retry performs one authorized attempt and can become delivered or ambiguous again.
-8. manual resolve -> resolved and no future dispatch.
-9. pruning with 1 pending + 250 delivered + 250 resolved retains 300 total, keeps active, keeps newest terminal.
-10. 320 active records retain all 320.
-11. dashboard pagination/search/filter and ambiguity controls operate on the intended queue item.
-12. discarded/frozen structural classification handles `frozen === undefined` as unsupported/unknown and does not equate a frozen tab with ordinary unreachable content script.
-13. `node scripts/verify-repo.mjs` passes.
-14. manifest parse/version, ZIP integrity, and real ChatGPT selector/receipt smoke test pass.
-
-## References
-
-- Chrome Tabs API: https://developer.chrome.com/docs/extensions/reference/api/tabs
-- Chrome extension changes: https://developer.chrome.com/docs/extensions/whats-new
+Use `docs/LIVE_SMOKE_CHECKLIST.md`, `docs/LIVE_SMOKE_RESULT_TEMPLATE.md`, and `scripts/verify-live-smoke-result.mjs`. Any observed product failure reopens the affected milestone and requires FIX -> VERIFY; do not weaken acceptance criteria.
 
 ## Version rule
 
-Do not call reconstructed runtime byte-exact v0.8.6. If exact v0.8.6 bytes are not recovered, implement/test as v0.8.7 and generate a fresh versioned artifact from repository source after all gates pass.
+Do not describe v0.8.7 as byte-exact v0.8.6. It is a deliberate reconstruction with its own candidate provenance and acceptance evidence. Final release is allowed only after M6 and M7 pass according to `docs/MILESTONES.md`.
