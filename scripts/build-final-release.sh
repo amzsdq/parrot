@@ -6,14 +6,12 @@ VERSION=$(node -e "const m=require('./extension/manifest.json');process.stdout.w
 OUT=${3:-parrot-v${VERSION}.zip}
 NOTES=${4:-docs/RELEASE_NOTES_DRAFT.md}
 RELEASE_SHA=$(git rev-parse HEAD)
-PROVENANCE="$OUT.provenance.txt"
 
 bash scripts/verify-release-preflight.sh "$CANDIDATE_SHA"
 
 echo "Verifying live browser evidence for candidate $CANDIDATE_SHA"
 GATE_OUTPUT=$(node scripts/verify-live-smoke-result.mjs "$RESULT" "$CANDIDATE_SHA")
 echo "$GATE_OUTPUT"
-LIVE_RESULT_SHA256=$(sha256sum "$RESULT" | awk '{print $1}')
 
 echo "PASS: release extension tree is identical to M6 candidate $CANDIDATE_SHA (release repo $RELEASE_SHA)"
 
@@ -31,5 +29,5 @@ unzip -t "$OUT"
 unzip -Z1 "$OUT" | LC_ALL=C sort > "$OUT.files.txt"
 sha256sum "$OUT" | tee "$OUT.sha256"
 unzip -p "$OUT" manifest.json | grep -F "\"version\": \"$VERSION\""
-printf 'candidate_sha=%s\nrelease_repo_sha=%s\nlive_result_sha256=%s\n' "$CANDIDATE_SHA" "$RELEASE_SHA" "$LIVE_RESULT_SHA256" > "$PROVENANCE"
+bash scripts/write-release-provenance.sh "$OUT" "$CANDIDATE_SHA" "$RELEASE_SHA" "$RESULT"
 echo "PASS: final release artifact built only after candidate-bound authenticated live evidence, candidate-tree identity, and limitation gates."
