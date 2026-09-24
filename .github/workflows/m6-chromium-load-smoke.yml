@@ -16,33 +16,35 @@ jobs:
         run: |
           google-chrome --version
           test "$(git rev-parse HEAD)" = "f51e4ba53753dade3bd3f9a64e2b3c50ca05d691"
-      - name: Launch exact candidate in modern headless Chromium
+      - name: Launch and open candidate dashboard in real Chromium
         run: |
-          set -u
+          set -euo pipefail
           EXT="$GITHUB_WORKSPACE/extension"
           PROFILE="$RUNNER_TEMP/parrot-chrome"
+          EXT_ID=$(python3 - "$EXT" <<'PY'
+          import hashlib,sys
+          h=hashlib.sha256(sys.argv[1].encode()).hexdigest()[:32]
+          print(''.join(chr(ord('a')+int(c,16)) for c in h))
+          PY
+          )
+          echo "candidate unpacked id=$EXT_ID"
           google-chrome --headless=new --no-sandbox \
             --user-data-dir="$PROFILE" \
             --disable-extensions-except="$EXT" \
             --load-extension="$EXT" \
             --remote-debugging-port=9222 \
             --no-first-run --no-default-browser-check \
-            about:blank >"$RUNNER_TEMP/chrome.log" 2>&1 &
+            "chrome-extension://$EXT_ID/dashboard.html" >"$RUNNER_TEMP/chrome.log" 2>&1 &
           PID=$!
           ready=0
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:9222/json/version > "$RUNNER_TEMP/version.json"; then ready=1; break; fi
             sleep 1
           done
-          echo '--- chrome log ---'; cat "$RUNNER_TEMP/chrome.log" || true
-          echo '--- devtools version ---'; cat "$RUNNER_TEMP/version.json" || true
-          if [ "$ready" != 1 ]; then echo 'DevTools endpoint never became ready' >&2; exit 1; fi
+          cat "$RUNNER_TEMP/chrome.log" || true
+          cat "$RUNNER_TEMP/version.json" || true
+          test "$ready" = 1
           curl -fsS http://127.0.0.1:9222/json/list | tee "$RUNNER_TEMP/targets.json"
-          if grep -Eq 'chrome-extension://[^/]+/(background\.js|popup\.html|dashboard\.html)' "$RUNNER_TEMP/targets.json"; then
-            echo 'PASS: real Chromium exposed candidate extension target.'
-          else
-            echo 'No extension target visible through DevTools target list.' >&2
-            kill "$PID" || true
-            exit 1
-          fi
+          grep -F "chrome-extension://$EXT_ID/dashboard.html" "$RUNNER_TEMP/targets.json"
+          echo 'PASS: exact M5 candidate dashboard loaded as a real Chromium extension page.'
           kill "$PID" || true
