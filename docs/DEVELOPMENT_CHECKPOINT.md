@@ -21,9 +21,9 @@ M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (
 ## M7 preparation while browser evidence is pending
 - Final builder is bound to exact M6 candidate `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`; it rejects dirty/untracked `extension/`, committed candidate-tree drift, non-`.zip` output, invalid live evidence, and stale output/provenance before rebuilding.
 - Builder provenance records `candidate_sha`, `release_repo_sha`, and SHA-256 of the exact authenticated live-result file consumed by the build. Release notes document the same evidence chain.
-- Latest independently checked main before this checkpoint was `2412ddf1036a90e08418149e9154534a97993b68`, 52 commits ahead of the M5 candidate; Git compare listed no `extension/` changed files, so product bytes remain candidate-identical.
-- Route State Contract run `35986859199` for live-evidence-digest release provenance completed SUCCESS. Earlier release-hardening at `dd128d09ea3476775b5838ee0ca213d89ec5a69f` is therefore no longer awaiting its first downstream green contract evidence.
-- `docs/RELEASE_NOTES_DRAFT.md` and README document candidate-tree identity, authenticated M6 requirement, deferred adapters, and NOT_OBSERVED limitations. No final release claim is allowed before M6.
+- Fresh independent compare at main `ee6f4970ad6b69b02e5c84521b54cc422c567ad8` is 53 commits ahead of exact M5 candidate and lists **no `extension/` changed files**. Product bytes therefore remain candidate-identical despite documentation/evidence/tooling commits.
+- Route State Contract run `35986859199` for live-evidence-digest release provenance completed SUCCESS. Earlier release-hardening at `dd128d09ea3476775b5838ee0ca213d89ec5a69f` is therefore covered by downstream green contract evidence.
+- `docs/RELEASE_NOTES_DRAFT.md` and README document candidate-tree identity, authenticated M6 requirement, deferred adapters, and NOT_OBSERVED limitations. GitHub Releases remains empty; no premature release exists.
 
 ## Remaining path
 1. Obtain a supported authenticated interactive Chrome+ChatGPT execution surface for M6-C2; do not blind-repeat the invalid headless probe.
