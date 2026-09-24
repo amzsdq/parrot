@@ -1,71 +1,7 @@
 <!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>앵무새 워커 대시보드</title>
-  <link rel="stylesheet" href="dashboard.css" />
-</head>
-<body>
-  <main class="shell">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">PARROT CONTROL PLANE</p>
-        <h1>Workers</h1>
-        <p class="sub">A, B, C… 여러 ChatGPT 탭을 이 대시보드 한 곳에서 제어합니다.</p>
-      </div>
-      <div class="top-actions">
-        <button id="refresh" class="ghost" type="button">상태 새로고침</button>
-        <button id="newTarget" type="button">+ Worker</button>
-      </div>
-    </header>
-
-    <section class="stats" aria-label="요약">
-      <article><span>Workers</span><strong id="statTargets">0</strong></article>
-      <article><span>Open tabs</span><strong id="statOpen">0</strong></article>
-      <article><span>Running</span><strong id="statRunning">0</strong></article>
-      <article><span>Attention</span><strong id="statAttention">0</strong></article>
-    </section>
-
-    <section class="panel workers-panel">
-      <div class="section-head worker-head">
-        <div>
-          <h2>Worker fleet</h2>
-          <p>대시보드가 활성 탭이 아니어도 열린 ChatGPT 탭들을 직접 제어합니다.</p>
-        </div>
-        <div class="toolbar" role="search">
-          <input id="searchWorkers" type="search" placeholder="Worker, 이름, Route 검색" aria-label="Worker 검색" />
-          <select id="filterWorkers" aria-label="Worker 상태 필터">
-            <option value="all">전체</option>
-            <option value="open">열린 탭</option>
-            <option value="running">실행 중</option>
-            <option value="attention">확인 필요</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="table-wrap worker-table-wrap">
-        <table class="worker-table">
-          <thead><tr><th>Worker</th><th>Chat</th><th>Tab</th><th>Run</th><th>Activity</th><th>Sent</th><th class="actions-col">Actions</th></tr></thead>
-          <tbody id="workersBody"></tbody>
-        </table>
-        <div id="emptyWorkers" class="empty" hidden>조건에 맞는 Worker가 없습니다.</div>
-        <div id="workerPager" class="pager" hidden>
-          <span id="workerRange">0–0 / 0</span>
-          <label>페이지당 <select id="workerPageSize" aria-label="페이지당 Worker 수"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option></select></label>
-          <button id="workerPrev" class="soft small" type="button">이전</button><button id="workerNext" class="soft small" type="button">다음</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="lower-grid">
-      <section class="panel"><div class="section-head"><div><h2>Routing</h2><p>WAKE / MESSAGE 전달 상태. MESSAGE 본문은 저장하지 않습니다.</p></div></div><div class="table-wrap"><table><thead><tr><th>Type</th><th>From → To</th><th>Status</th><th>Time</th><th>Action</th></tr></thead><tbody id="routingBody"></tbody></table><div id="emptyRouting" class="empty compact" hidden>라우팅 기록이 없습니다.</div></div></section>
-      <section class="panel"><div class="section-head"><div><h2>Recent events</h2><p>실행·완료·라우팅 이벤트의 최근 기록입니다.</p></div></div><div id="events" class="event-list"></div><div id="emptyEvents" class="empty compact" hidden>표시할 이벤트가 없습니다.</div></section>
-    </section>
-
-    <p class="footnote">Live tab 상태는 채팅 본문을 읽지 않고 탭/DOM의 구조적 신호만 확인합니다.</p><p id="toast" class="toast" aria-live="polite"></p>
-  </main>
-  <script src="route-state.js"></script>
-  <script src="dashboard.js"></script>
-</body>
-</html>
+<html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>앵무새 워커 대시보드</title><link rel="stylesheet" href="dashboard.css"/></head><body><main class="shell">
+<header class="topbar"><div><p class="eyebrow">PARROT CONTROL PLANE</p><h1>Workers</h1><p class="sub">A, B, C… 여러 ChatGPT 탭을 이 대시보드 한 곳에서 제어합니다.</p></div><div class="top-actions"><button id="refresh" class="ghost" type="button">상태 새로고침</button><button id="newTarget" type="button">+ Worker</button></div></header>
+<section class="stats" aria-label="요약"><article><span>Workers</span><strong id="statTargets">0</strong></article><article><span>Open tabs</span><strong id="statOpen">0</strong></article><article><span>Running</span><strong id="statRunning">0</strong></article><article><span>Attention</span><strong id="statAttention">0</strong></article></section>
+<section class="panel workers-panel"><div class="section-head worker-head"><div><h2>Worker fleet</h2><p>대시보드를 떠나지 않고 열린 ChatGPT Worker를 시작·중지·열기 할 수 있습니다.</p></div><div class="toolbar" role="search"><input id="searchWorkers" type="search" placeholder="Worker, 이름, Route 검색" aria-label="Worker 검색"/><select id="filterWorkers" aria-label="Worker 상태 필터"><option value="all">전체</option><option value="open">열린 탭</option><option value="running">실행 중</option><option value="attention">확인 필요</option></select></div></div><div class="table-wrap worker-table-wrap"><table class="worker-table"><thead><tr><th>Worker</th><th>Chat</th><th>Tab</th><th>Run</th><th>Activity</th><th>Sent</th><th class="actions-col">Actions</th></tr></thead><tbody id="workersBody"></tbody></table><div id="emptyWorkers" class="empty" hidden>조건에 맞는 Worker가 없습니다.</div><div id="workerPager" class="pager" hidden><span id="workerRange">0–0 / 0</span><label>페이지당 <select id="workerPageSize" aria-label="페이지당 Worker 수"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option></select></label><button id="workerPrev" class="soft small" type="button">이전</button><button id="workerNext" class="soft small" type="button">다음</button></div></div></section>
+<section class="lower-grid"><section class="panel"><div class="section-head"><div><h2>Routing</h2><p>WAKE / MESSAGE 전달 상태. MESSAGE 본문은 저장하지 않습니다.</p></div></div><div class="table-wrap"><table><thead><tr><th>Type</th><th>From → To</th><th>Status</th><th>Time</th><th>Action</th></tr></thead><tbody id="routingBody"></tbody></table><div id="emptyRouting" class="empty compact" hidden>라우팅 기록이 없습니다.</div></div></section><section class="panel"><div class="section-head"><div><h2>Recent events</h2><p>실행·완료·라우팅 이벤트의 최근 기록입니다.</p></div></div><div id="events" class="event-list"></div><div id="emptyEvents" class="empty compact" hidden>표시할 이벤트가 없습니다.</div></section></section>
+<p class="footnote">Live tab 상태는 채팅 본문을 읽지 않고 탭/DOM의 구조적 신호만 확인합니다.</p><p id="toast" class="toast" aria-live="polite"></p></main><script src="route-state.js"></script><script src="dashboard-model.js"></script><script src="dashboard.js"></script></body></html>
