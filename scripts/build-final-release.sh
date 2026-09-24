@@ -1,14 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 RESULT=${1:-docs/LIVE_SMOKE_RESULT.md}
-SOURCE_SHA=${2:-$(git rev-parse HEAD)}
+CANDIDATE_SHA=${2:-f51e4ba53753dade3bd3f9a64e2b3c50ca05d691}
 VERSION=$(node -e "const m=require('./extension/manifest.json');process.stdout.write(m.version)")
 OUT=${3:-parrot-v${VERSION}.zip}
 NOTES=${4:-docs/RELEASE_NOTES_DRAFT.md}
+RELEASE_SHA=$(git rev-parse HEAD)
 
-echo "Verifying live browser evidence for source $SOURCE_SHA"
-GATE_OUTPUT=$(node scripts/verify-live-smoke-result.mjs "$RESULT" "$SOURCE_SHA")
+echo "Verifying live browser evidence for candidate $CANDIDATE_SHA"
+GATE_OUTPUT=$(node scripts/verify-live-smoke-result.mjs "$RESULT" "$CANDIDATE_SHA")
 echo "$GATE_OUTPUT"
+
+# M6 validates the candidate extension tree, not arbitrary later product edits.
+# Docs/release-tooling may advance after M5, but any extension/ change requires a
+# new candidate and a fresh M6 run rather than silently shipping untested code.
+if ! git diff --quiet "$CANDIDATE_SHA" -- extension; then
+  echo "FAIL: extension/ differs from M6 candidate $CANDIDATE_SHA; create a new candidate and repeat M6" >&2
+  git diff --name-only "$CANDIDATE_SHA" -- extension >&2
+  exit 1
+fi
+echo "PASS: release extension tree is identical to M6 candidate $CANDIDATE_SHA (release repo $RELEASE_SHA)"
+
 if grep -q 'LIMITATION: S9/S10 NOT_OBSERVED' <<<"$GATE_OUTPUT"; then
   test -f "$NOTES"
   grep -Eq 'S9|ambigu' "$NOTES"
@@ -22,4 +34,5 @@ unzip -t "$OUT"
 unzip -Z1 "$OUT" | LC_ALL=C sort > "$OUT.files.txt"
 sha256sum "$OUT" | tee "$OUT.sha256"
 unzip -p "$OUT" manifest.json | grep -F "\"version\": \"$VERSION\""
-echo "PASS: final release artifact built only after candidate-bound live evidence and limitation gates."
+printf 'candidate_sha=%s\nrelease_repo_sha=%s\n' "$CANDIDATE_SHA" "$RELEASE_SHA" > "$OUT.provenance.txt"
+echo "PASS: final release artifact built only after candidate-bound live evidence, candidate-tree identity, and limitation gates."
