@@ -52,9 +52,10 @@ The adapter pins all independently meaningful identities available from GitHub C
 --signer-repo amzsdq/parrot
 --predicate-type https://slsa.dev/provenance/v1
 --source-digest <release_repo_sha parsed from the exact record>
+--source-ref refs/heads/main
 ```
 
-`--repo` constrains the repository associated with the attestation lookup/identity; `--signer-repo` constrains the signing workflow repository; `--predicate-type` prevents accepting an unrelated claim type; and `--source-digest` binds the cryptographically verified provenance source commit to the same release repository SHA that the record claims. The parsed identities are emitted only after `gh attestation verify` succeeds.
+`--repo` constrains the repository associated with the attestation lookup/identity; `--signer-repo` constrains the signing workflow repository; `--predicate-type` prevents accepting an unrelated claim type; `--source-digest` binds the cryptographically verified provenance source commit to the same release repository SHA that the record claims; and `--source-ref refs/heads/main` independently enforces the canonical source-authorization branch. Digest alone is insufficient for this policy because an alternate branch or tag can point at the same commit. The parsed identities are emitted only after `gh attestation verify` succeeds.
 
 ### Final signer pinning gate
 
@@ -96,7 +97,7 @@ The preferred M7 design is therefore to remove caller-selected source identity e
 2. the workflow fails closed unless `github.ref` is exactly the canonical protected default-branch ref (currently expected to be `refs/heads/main` once the workflow is implemented and reviewed); do not accept a tag, release branch, or API/CLI-selected alternate ref;
 3. set `release_repo_sha` from the event's immutable `github.sha`, not from a workflow input, branch lookup performed later, tag lookup, or caller-supplied SHA;
 4. checkout exactly `${{ github.sha }}` detached and verify `git rev-parse HEAD == "$GITHUB_SHA"` before any build or record construction;
-5. carry that same SHA unchanged into provenance, the publication record, and attestation source identity. Consumer `--source-digest` must match it;
+5. carry that same SHA unchanged into provenance, the publication record, and attestation source identity. Consumer `--source-digest` must match it, and consumer `--source-ref refs/heads/main` must independently prove the attested run came from the canonical authorization ref;
 6. do not re-resolve `main` after the run starts. The branch may advance normally; the event-captured commit remains the authorized source for that run.
 
 This makes the maintainer's dispatch of the canonical protected branch at its then-current immutable event SHA the authorization act, rather than allowing the workflow to authenticate its own arbitrary SHA input. If stronger human separation is later required, put the publication job behind a reviewed GitHub Environment approval, but do not substitute environment approval for exact source binding.
@@ -116,9 +117,9 @@ These are implementation gates, not a request to create the workflow now. Once t
 5. Construct the v1 publication record from the frozen repository SHA and those two digests.
 6. Sign/attest that exact record through the trusted publication channel.
 7. Publish release assets and the verifiable record/attestation.
-8. Consumer verifies the exact record file with repository, signer, predicate, and source-commit policy, then supplies the three authenticated values to `verify-release-ready.sh`.
+8. Consumer verifies the exact record file with repository, signer, predicate, source-commit, and canonical-source-ref policy, then supplies the three authenticated values to `verify-release-ready.sh`.
 
-A release must fail closed if the trusted record is absent, its signature/signer identity cannot be verified, any field is missing/duplicated/malformed, the attested subject is not the exact record bytes, the verified provenance source commit differs from `release_repo_sha`, or the three values do not match the downloaded release component set.
+A release must fail closed if the trusted record is absent, its signature/signer identity cannot be verified, any field is missing/duplicated/malformed, the attested subject is not the exact record bytes, the verified provenance source commit differs from `release_repo_sha`, the verified source ref is not canonical `refs/heads/main`, or the three values do not match the downloaded release component set.
 
 ## Explicit non-goals
 
