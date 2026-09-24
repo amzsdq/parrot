@@ -17,6 +17,9 @@ cleanup_failed_release() {
 }
 trap cleanup_failed_release ERR
 
+# Provenance records RELEASE_SHA, so the release machinery and notes used by
+# this attempt must actually be the committed bytes identified by that SHA.
+bash scripts/verify-release-worktree.sh "$NOTES"
 bash scripts/verify-release-preflight.sh "$CANDIDATE_SHA"
 
 echo "Verifying live browser evidence for candidate $CANDIDATE_SHA"
