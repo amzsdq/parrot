@@ -1,32 +1,30 @@
 # Parrot development checkpoint
 
-# Relay handoff state model
+## Relay handoff / timing model
 
-Immediate continuation is now split from historical logging:
-
-- `docs/BATON.md` = latest-only execution baton. Read this first on wake.
-- `docs/DEVELOPMENT_LOG.md` = append-only history of full baton snapshots.
-- Every handoff writes the same next-baton snapshot to BOTH places: replace BATON with the newest snapshot, append that snapshot to DEVELOPMENT_LOG.
-- Each baton carries `EXPECTED_ACTIVE_MINUTES` and `NEXT_WAKE_DELAY_MINUTES`.
-- Preferred/default work package target is 14 active minutes because minimizing relay idle time is a primary objective.
-- Build approximately 14 minutes of genuinely useful contiguous work whenever available; finishing a small subtask is not a reason to shorten the package.
-- Packages shorter than 14 minutes are exceptions only for inherently short or externally gated next steps (for example brief test/observation/CI waits) and must record a concrete `SHORT_PACKAGE_REASON`.
-- Never idle or pad merely to hit 14 minutes; use adjacent useful work when available.
-- Official timing is externalized to GitHub server timestamps in issue #1 `[PARROT_RELAY_WORK_MARKERS]`. Every wake records WAKE/START/END and reports both `SESSION_ELAPSED=END-WAKE` and `WORKED=END-START`.
+- `docs/BATON.md` is the latest-only execution baton and is read first on wake.
+- `docs/DEVELOPMENT_LOG.md` is append-only full baton history.
+- Preferred/default package target is 14 active minutes to minimize relay idle time. Sub-14 packages require an unavoidable `SHORT_PACKAGE_REASON`.
+- Official timing is externalized to GitHub issue #1 `[PARROT_RELAY_WORK_MARKERS]`.
+- Each wake records WAKE / START / END comments. Official `SESSION_ELAPSED=END-WAKE`; official `WORKED=END-START`.
+- Connector `fetch_issue_comments` currently returns `created_at=null`; this is NOT accepted as timing evidence. The concrete comment id must be fetched through GitHub REST `/repos/amzsdq/parrot/issues/comments/<id>`, which exposes authoritative server `created_at`.
 
 Status: CONTINUE
 Latest version: v0.8.6
-Artifact SHA-256: d4ecc03f06f274a1ecba7cad98c465bb8031039637f5aafa32b014585f36927b (v0.8.5 historical baseline; v0.8.6 artifact is the current conversation artifact)
 
 ## Current state
 
 v0.8.6 fixes durable route-queue history pruning: both `delivered` and manually `resolved` records count as terminal history. Active records remain protected from arbitrary pruning.
 
-Repository source-of-truth migration is still in progress. Exact artifact Git blob identity is verified for `manifest.json`, `chatgpt-adapter.js`, `dashboard.html`, `dashboard.css`, `popup.css`, and `popup.html`.
+Repository source-of-truth migration remains incomplete. Exact artifact Git blob identity is verified for `manifest.json`, `chatgpt-adapter.js`, `dashboard.html`, `dashboard.css`, `popup.css`, and `popup.html`.
 
-`extension/popup.js` is present but is NOT yet byte-exact. Fresh repository directory metadata reports GitHub blob `b2df626c1ba3a2cb95b608f55053d122ca6a5b4c`, size 21907 bytes. The v0.8.6 artifact is 21960 bytes with Git blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`. This proves a 53-byte content difference; it is not merely an unverified SHA. Do not certify this file until exact content is reconciled.
+`extension/popup.js` is present but is NOT certified byte-exact. Repository blob is `b2df626c1ba3a2cb95b608f55053d122ca6a5b4c`, 21907 bytes. Recorded v0.8.6 artifact target is blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`, 21960 bytes: a 53-byte size gap.
 
-The full runtime/UI package is not yet committed: `background.js`, `content.js`, and `dashboard.js` remain absent. GitHub is therefore not yet a complete reconstructable source of truth.
+Fresh investigation of commit `990a70eef80b7b43627c2ebb76ec857e3feb28ae` shows that the attempted "exact" sync only added four blank lines relative to its parent. Therefore that commit does not explain or close the 53-byte artifact gap. Do not infer missing bytes from this commit.
+
+The actual v0.8.6 ZIP / extracted runtime bytes were not discoverable in the currently searchable conversation/library surface during PARROT-BATON-001R1. Searches found Parrot design/handoff documents, not the v0.8.6 package. Repository releases are empty and only `main` exists. This is an artifact-access blocker for honest byte certification, not proof that the artifact no longer exists elsewhere.
+
+The full runtime/UI package is still absent from `main`: `background.js`, `content.js`, and `dashboard.js` are missing. Historical commit `8baedeb5327febf724ff3156943610beef2dd22b` contained only a nine-line `background.js` source-sync stub and was intentionally removed by the following commit; it is not authoritative runtime source and must not be resurrected as implementation.
 
 ## Verified v0.8.6 baseline
 
@@ -46,16 +44,17 @@ The full runtime/UI package is not yet committed: `background.js`, `content.js`,
 - `dashboard.css`: exact artifact blob `d83a7a5b6794daf0b3b60509e2b7d45ae2745795`.
 - `popup.css`: exact artifact blob `b87074fc635f6e003918b633d233d693909bf662`.
 - `popup.html`: exact artifact blob `0c36d5785a6d05f9137c213f89a16584f1fbab1b`.
-- `popup.js`: repository blob `b2df626c1ba3a2cb95b608f55053d122ca6a5b4c`, 21907 bytes; artifact blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`, 21960 bytes. Exact synchronization remains required.
+- `popup.js`: repository `b2df626c1ba3a2cb95b608f55053d122ca6a5b4c` / 21907 bytes; recorded artifact target `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da` / 21960 bytes; unresolved.
 
 ## Remaining high-value work
 
-1. Reconcile `popup.js` to byte-exact v0.8.6 artifact content; compare bytes/lines rather than assuming connector newline conversion.
-2. Commit exact v0.8.6 package source for `background.js`, `content.js`, and `dashboard.js`.
-3. Rebuild the extension ZIP using repository source only and run JS syntax, manifest parse, ZIP integrity, and artifact-content comparison checks.
-4. Add durable route-state regression fixtures covering `pending → ambiguous → manual retry/resolved → delivered`, outbox reconciliation, and terminal pruning.
-5. Run real ChatGPT browser regression tests for selector/receipt stability.
-6. Exercise discarded/frozen recovery with real Chrome memory-saver behavior before adding automatic recovery.
+1. Recover authoritative v0.8.6 artifact bytes from an available runtime/conversation/library source; do not guess missing source.
+2. Reconcile `popup.js` byte-exactly once those bytes are available.
+3. Commit authoritative `background.js`, `content.js`, and `dashboard.js` from artifact source.
+4. Rebuild ZIP from repository-only source and run JS syntax, manifest parse, ZIP integrity, and artifact-content comparison checks.
+5. Add durable route-state regression fixtures covering `pending → ambiguous → manual retry/resolved → delivered`, outbox reconciliation, and terminal pruning.
+6. Run real ChatGPT browser regression tests for selector/receipt stability.
+7. Exercise discarded/frozen recovery with real Chrome memory-saver behavior before automatic recovery.
 
 ## Reference / rationale
 
