@@ -5,7 +5,7 @@ Keep ONLY the latest baton here. Historical baton snapshots are mirrored automat
 
 CURRENT_VERSION=v0.8.7-reconstruction
 STATUS=CONTINUE
-WORK_PACKAGE_ID=PARROT-BATON-006
+WORK_PACKAGE_ID=PARROT-BATON-007
 PACKAGE_KIND=CORE_BEHAVIOR_RECONSTRUCTION
 EXPECTED_ACTIVE_MINUTES=14
 NEXT_WAKE_DELAY_MINUTES=14
@@ -13,48 +13,47 @@ SHORT_PACKAGE_REASON=NONE
 WORK_TIME_MARKER_ISSUE=amzsdq/parrot#1
 
 CURRENT_TASK=
-Close the highest-risk core behavior gaps left after the first v0.8.7 production routing slice. A green static CI gate is not release evidence until signal discovery, prompt composition, interval/cooldown behavior, and live browser behavior are addressed.
+Restore prompt composition, interval execution, cooldown/error behavior, and canonical dashboard classification on top of the now-present structural signal discovery + durable routing path.
 
 COMPLETED_PREVIOUS=
-- Added reconstructed classic MV3 `background.js`, loading canonical route-state + route-queue primitives.
-- Added reconstructed `content.js` with user-count/generation strong route receipt, durable ambiguity outbox-before-notify, local ambiguity fence, and state-only background reconciliation.
-- Restored popup `PARROT_START` response-mode receiver and repeat runner with running/max-repeat/runtime/generation/delay guards.
-- Manifest is deliberately v0.8.7, classic background, and loads route-state before adapter/content.
-- Added dashboard controller with worker search/filter/pagination and ambiguous Retry/Resolve controls.
-- Expanded GitHub Actions to syntax-check reconstructed runtime and run route-state, route-queue, contract, integration, and rebuildability gates. Run 35962646344 passed all gates; later response-runner commit also passed every substantive gate step in run 35962750376.
-- Fixed contract validator to support current schema 1 + schema 2 instead of falsely rejecting the route-state contract.
-- Fixed integration guard so combined `importScripts('route-state.js', 'route-queue.js')` is accepted and both primitives are required.
-- During an attempted popup exact repair, a whole-file text replacement accidentally wrote a placeholder. This was detected immediately and restored through Git tree/blob identity to prior blob `b2df626c...`; subsequent CI rebuildability passed. Do not repeat whole-file popup replacement without byte-safe source.
-- Added `docs/V087_RUNTIME_GAP_AUDIT.md` with explicit release blockers.
+- `signal-scanner.js` observes only exact `https://parrot.invalid/...` anchor hrefs and does not read assistant prose semantics.
+- Scanner accepts COMPLETE/WAKE/MESSAGE URL families and sends structural signal metadata to background.
+- Scanner now marks a signal accepted in page memory only after background returns `ok`; transient background failure does not permanently suppress retry. Background `signalId` dedupe is the durable idempotency authority.
+- Background parses COMPLETE by runId and WAKE/MESSAGE by sourceRunId+eventId+to/ref.
+- Repeated DOM observations are deduped against durable events/route records by stable signalId.
+- COMPLETE marks matching runId target completed and records a durable event.
+- WAKE/MESSAGE create durable pending route records and events, then invoke pending-only queue processing.
+- MESSAGE route payload is built from the target template and reference metadata; WAKE uses target wakePrompt.
+- Manifest loads signal-scanner in ChatGPT tabs; CI run 35962901800 passed after manifest wiring.
+- Response-mode runner and strong route receipt path remain present; repository static/rebuildability gates were green before/through this integration slice.
+- Release-gap audit remains authoritative: green CI is not live-browser proof.
 
 NEXT_ACTION=
-1. Reconstruct structural COMPLETE/WAKE/MESSAGE signal discovery and durable route/event creation from recovered behavior/contracts. Detect exact `parrot.invalid` anchors/URLs structurally; do not semantically read assistant prose.
-2. Ensure dedupe/idempotency by runId/sourceRunId+eventId so repeated DOM observation cannot enqueue duplicate routes.
-3. Reconstruct prompt composition: onboarding template, completion instruction with exact runId URL, WAKE prompt, MESSAGE template/reference handling. Preserve the rule that MESSAGE body/reference handling does not turn fleet monitoring into semantic chat reading.
-4. Reconstruct interval mode. Popup currently explicitly arms only response mode; provide a durable interval execution path that respects intervalMin/maxRepeats/runtime/status without duplicate runners.
-5. Reconstruct documented cooldown/error-UI behavior: Too-many-requests 10→20→40→60 min; other transient errors 2→5→10→20 min. Error detection must stay on dialog/alert/toast UI surfaces, not assistant semantic content.
-6. Converge dashboard structural tab classification onto canonical route-state implementation rather than maintaining a hand-coded duplicate.
-7. Add deterministic/static tests for each reconstructed seam and keep all existing CI gates green.
-8. Do NOT build/release v0.8.7 ZIP yet. Real ChatGPT browser smoke tests remain required after core behavior closes.
+1. Reconstruct normal prompt composition for response sends: onboarding template expansion (`SELF`, WAKE_URL, MESSAGE_URL, TARGETS) and completion instruction exact `runId` URL injection. Ensure onboarding occurs at the intended lifecycle boundary rather than every repeat if historical behavior requires once-per-run.
+2. Add deterministic tests/guard for exact COMPLETE/WAKE/MESSAGE URL parsing and signalId dedupe, including malformed/missing `to` and repeated observations.
+3. Reconstruct interval mode with one runner per target and correct intervalMin/maxRepeats/runtime/status semantics. Popup currently does not explicitly PARROT_START interval mode, so choose a coherent storage/background/content wake path and test duplicate-runner fencing.
+4. Reconstruct structural error-surface cooldown handling: Too-many-requests 10→20→40→60 minutes; other transient error UI 2→5→10→20. Do not inspect assistant prose.
+5. Load/use canonical route-state classification in dashboard rather than local duplicated `classifyTab` logic.
+6. Update `docs/V087_RUNTIME_GAP_AUDIT.md` only as gaps are actually closed.
+7. Keep CI green. Do not release/build final ZIP until live ChatGPT smoke tests validate selectors, service-worker lifecycle, response runner, signal routing, ambiguity behavior, and dashboard actions.
 
 DONE_CRITERIA=
-- signal discovery creates deduped durable route/events without semantic chat parsing.
-- onboarding/completion/WAKE/MESSAGE prompt composition is restored and tested.
-- response and interval modes both have coherent runner ownership and limits.
-- cooldown ladders are restored from structural error UI evidence.
-- dashboard uses canonical structural classification.
-- CI remains green and gap audit is reduced honestly.
+- normal response prompt composition restores onboarding/completion contracts without semantic monitoring.
+- signal parser/dedupe has deterministic regression evidence.
+- interval mode and cooldown ladders are operational and fenced from duplicate execution.
+- dashboard structural classification has one canonical implementation.
+- CI remains green and gap audit accurately reflects remaining live-browser work.
 - next baton remains ~14 useful minutes.
 
 DO_NOT_REPEAT=
 - broad Library search for exact v0.8.6 runtime
 - popup.js 53-byte diagnosis
 - unsafe whole-file popup text replacement
-- treating static CI success as live browser/release proof
-- duplicate state-machine or tab-classification implementations
+- reimplementing structural signal discovery from scratch
+- treating static CI as browser/release proof
 
 BLOCKER=
-Exact later runtime bytes remain unavailable, so v0.8.7 reconstruction must stay evidence-driven. Real browser smoke testing cannot be replaced by repository CI and remains a later release gate.
+Exact later runtime bytes remain unavailable. Reconstruction is deliberate v0.8.7. Live browser smoke testing remains a release gate after code-level gaps close.
 
 SCHEDULER_RULE=
 Preferred/default NEXT_WAKE_DELAY_MINUTES is 14. Shorter is exceptional and requires a concrete unavoidable SHORT_PACKAGE_REASON.
