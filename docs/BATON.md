@@ -13,34 +13,33 @@ SHORT_PACKAGE_REASON=NONE
 WORK_TIME_MARKER_ISSUE=amzsdq/parrot#1
 
 CURRENT_TASK=
-Restore prompt composition, interval execution, cooldown/error behavior, and canonical dashboard classification on top of the now-present structural signal discovery + durable routing path.
+Restore prompt composition, interval execution, cooldown/error behavior, and canonical dashboard classification on top of the now-tested structural signal discovery + durable routing path.
 
 COMPLETED_PREVIOUS=
-- `signal-scanner.js` observes only exact `https://parrot.invalid/...` anchor hrefs and does not read assistant prose semantics.
-- Scanner accepts COMPLETE/WAKE/MESSAGE URL families and sends structural signal metadata to background.
-- Scanner now marks a signal accepted in page memory only after background returns `ok`; transient background failure does not permanently suppress retry. Background `signalId` dedupe is the durable idempotency authority.
-- Background parses COMPLETE by runId and WAKE/MESSAGE by sourceRunId+eventId+to/ref.
-- Repeated DOM observations are deduped against durable events/route records by stable signalId.
-- COMPLETE marks matching runId target completed and records a durable event.
-- WAKE/MESSAGE create durable pending route records and events, then invoke pending-only queue processing.
-- MESSAGE route payload is built from the target template and reference metadata; WAKE uses target wakePrompt.
-- Manifest loads signal-scanner in ChatGPT tabs; CI run 35962901800 passed after manifest wiring.
-- Response-mode runner and strong route receipt path remain present; repository static/rebuildability gates were green before/through this integration slice.
-- Release-gap audit remains authoritative: green CI is not live-browser proof.
+- `signal-scanner.js` observes only exact `https://parrot.invalid/...` anchor hrefs; it never reads assistant text semantics.
+- Scanner marks a page signal accepted only after background `ok`; transient failure remains retryable. Background signalId dedupe is durable authority.
+- Added canonical `signal-protocol.js` parser/template primitive and `scripts/test-signal-protocol.mjs` vectors for COMPLETE/WAKE/MESSAGE, malformed origin/path, missing `to`, and template substitution.
+- Background now imports and uses canonical tested `ParrotSignalProtocol` rather than a duplicate parser.
+- COMPLETE uses runId; WAKE/MESSAGE use sourceRunId+eventId+to/ref. Durable queue/events dedupe repeated observations by stable signalId.
+- COMPLETE marks matching run target completed. WAKE/MESSAGE create durable pending route records and immediately invoke pending-only processing.
+- MESSAGE payload uses target template + reference metadata; WAKE uses target wakePrompt.
+- Manifest loads structural scanner; CI run 35962901800 passed this wiring. Workflow now also syntax-checks scanner/protocol and runs signal protocol vectors.
+- Response-mode `PARROT_START` receiver/repeat runner and strong route receipt path are present and integration-guarded.
+- `docs/V087_RUNTIME_GAP_AUDIT.md` remains the release-blocker authority. Static CI is not live-browser proof.
 
 NEXT_ACTION=
-1. Reconstruct normal prompt composition for response sends: onboarding template expansion (`SELF`, WAKE_URL, MESSAGE_URL, TARGETS) and completion instruction exact `runId` URL injection. Ensure onboarding occurs at the intended lifecycle boundary rather than every repeat if historical behavior requires once-per-run.
-2. Add deterministic tests/guard for exact COMPLETE/WAKE/MESSAGE URL parsing and signalId dedupe, including malformed/missing `to` and repeated observations.
-3. Reconstruct interval mode with one runner per target and correct intervalMin/maxRepeats/runtime/status semantics. Popup currently does not explicitly PARROT_START interval mode, so choose a coherent storage/background/content wake path and test duplicate-runner fencing.
+1. Reconstruct normal response prompt composition: onboarding template expansion (`SELF`, `WAKE_URL`, `MESSAGE_URL`, `TARGETS`) and completion instruction exact `runId` URL injection. Ensure onboarding is injected at the correct once-per-run lifecycle boundary, not blindly every repeat.
+2. Add an integration test around signal dedupe at the durable queue/event layer, not only parser vectors.
+3. Reconstruct interval mode with one runner per target and correct intervalMin/maxRepeats/runtime/status semantics. Popup currently does not explicitly PARROT_START interval mode, so establish a coherent storage/background/content wake path and duplicate-runner fence.
 4. Reconstruct structural error-surface cooldown handling: Too-many-requests 10→20→40→60 minutes; other transient error UI 2→5→10→20. Do not inspect assistant prose.
-5. Load/use canonical route-state classification in dashboard rather than local duplicated `classifyTab` logic.
-6. Update `docs/V087_RUNTIME_GAP_AUDIT.md` only as gaps are actually closed.
-7. Keep CI green. Do not release/build final ZIP until live ChatGPT smoke tests validate selectors, service-worker lifecycle, response runner, signal routing, ambiguity behavior, and dashboard actions.
+5. Load/use canonical route-state classification in dashboard instead of local duplicated `classifyTab` logic.
+6. Update gap audit only as each gap is actually closed. Keep all CI gates green.
+7. Do not release/build final ZIP until live ChatGPT smoke tests validate selectors, service-worker lifecycle, response runner, signal routing, ambiguity behavior, and dashboard actions.
 
 DONE_CRITERIA=
-- normal response prompt composition restores onboarding/completion contracts without semantic monitoring.
-- signal parser/dedupe has deterministic regression evidence.
-- interval mode and cooldown ladders are operational and fenced from duplicate execution.
+- onboarding/completion prompt composition is restored and tested.
+- durable signal dedupe has regression evidence beyond parser-only tests.
+- interval mode and cooldown ladders are operational and duplicate-fenced.
 - dashboard structural classification has one canonical implementation.
 - CI remains green and gap audit accurately reflects remaining live-browser work.
 - next baton remains ~14 useful minutes.
@@ -49,7 +48,7 @@ DO_NOT_REPEAT=
 - broad Library search for exact v0.8.6 runtime
 - popup.js 53-byte diagnosis
 - unsafe whole-file popup text replacement
-- reimplementing structural signal discovery from scratch
+- duplicate signal parser/state implementations
 - treating static CI as browser/release proof
 
 BLOCKER=
