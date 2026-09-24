@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Parrot / 앵무새",
-  "version": "0.8.5",
-  "description": "ChatGPT 응답 완료를 감지해 같은 프롬프트를 자동 반복 전송합니다.",
+  "name": "앵무새",
+  "version": "0.8.6",
+  "description": "ChatGPT 멀티 워커를 제어하고 durable receipt·COMPLETE·WAKE·MESSAGE 라우팅을 관리하는 로컬 앵무새 확장프로그램",
   "permissions": [
     "storage",
     "tabs",
@@ -12,7 +12,8 @@
     "https://chatgpt.com/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
@@ -27,8 +28,7 @@
     }
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Parrot / 앵무새"
-  },
-  "options_page": "dashboard.html"
+    "default_title": "앵무새",
+    "default_popup": "popup.html"
+  }
 }
