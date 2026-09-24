@@ -1,3 +1,9 @@
+# LEGACY / HISTORICAL DEVELOPMENT LOG
+
+Historical BATON snapshots below are retained only as evidence of past work.
+They are NOT a continuation authority and MUST NOT be used to select current work.
+Current work/progress authority is docs/MILESTONES.md.
+
 # Parrot Development Log
 
 Append-only relay history. Each completed wake appends the full BATON snapshot that it hands to the next wake.
