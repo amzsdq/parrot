@@ -42,3 +42,21 @@ jobs:
       - run: node scripts/validate-contracts.mjs
       - run: node scripts/validate-v087-integration.mjs
       - run: node scripts/verify-repo.mjs
+      - name: Build candidate ZIP
+        run: |
+          rm -f parrot-v0.8.7-candidate.zip candidate.sha256 candidate-files.txt
+          (cd extension && zip -X -r ../parrot-v0.8.7-candidate.zip . -x '*.DS_Store')
+          unzip -t parrot-v0.8.7-candidate.zip
+          unzip -Z1 parrot-v0.8.7-candidate.zip | LC_ALL=C sort > candidate-files.txt
+          sha256sum parrot-v0.8.7-candidate.zip | tee candidate.sha256
+          test "$(unzip -p parrot-v0.8.7-candidate.zip manifest.json | node -e \"let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const m=JSON.parse(s);process.stdout.write(m.version)})\")" = "0.8.7"
+      - name: Upload NON-RELEASE candidate evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: parrot-v0.8.7-candidate-NON-RELEASE-${{ github.sha }}
+          path: |
+            parrot-v0.8.7-candidate.zip
+            candidate.sha256
+            candidate-files.txt
+          if-no-files-found: error
+          retention-days: 14
