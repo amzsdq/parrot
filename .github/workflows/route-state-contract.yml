@@ -3,19 +3,15 @@ name: Route State Contract
 on:
   push:
     paths:
-      - 'extension/route-state.js'
-      - 'extension/route-queue.js'
+      - 'extension/**'
       - 'tests/route-state-contract.json'
-      - 'scripts/test-route-state.mjs'
-      - 'scripts/test-route-queue.mjs'
+      - 'scripts/**'
       - '.github/workflows/route-state-contract.yml'
   pull_request:
     paths:
-      - 'extension/route-state.js'
-      - 'extension/route-queue.js'
+      - 'extension/**'
       - 'tests/route-state-contract.json'
-      - 'scripts/test-route-state.mjs'
-      - 'scripts/test-route-queue.mjs'
+      - 'scripts/**'
       - '.github/workflows/route-state-contract.yml'
 
 permissions:
@@ -32,7 +28,12 @@ jobs:
           node-version: '22'
       - run: node --check extension/route-state.js
       - run: node --check extension/route-queue.js
+      - run: node --check extension/background.js
+      - run: node --check extension/content.js
       - run: node --check scripts/test-route-state.mjs
       - run: node --check scripts/test-route-queue.mjs
       - run: node scripts/test-route-state.mjs
       - run: node scripts/test-route-queue.mjs
+      - run: node scripts/validate-contracts.mjs
+      - run: node scripts/validate-v087-integration.mjs
+      - run: node scripts/verify-repo.mjs
