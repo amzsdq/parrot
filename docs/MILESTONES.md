@@ -20,6 +20,19 @@ Rules:
 - Never weaken or reinterpret criteria merely to get DONE.
 - Self-evaluation prose is weaker than tests, exact artifacts, browser evidence, or reproducible observations.
 
+## Premature-termination recovery
+
+If a previous invocation ended while any milestone/criterion remained runnable and neither ALL_MILESTONES_DONE nor SUCCESSOR_HANDOFF_COMPLETE was true, treat that as a relay/runtime defect to repair, not as project/task failure.
+
+Required behavior on the next wake:
+- identify the concrete reason work stopped early;
+- repair the prompt/control/scheduler/ownership/work-selection mechanism that allowed the premature stop when safely possible;
+- preserve already-valid product work and evidence;
+- resume from the earliest non-DONE milestone immediately;
+- do not merely report "failed", "work was not done", or equivalent and stop again while safe runnable work remains.
+
+Repeated premature termination requires changing the mechanism or diagnostic approach rather than repeating the same behavior.
+
 ## Continuous-work rule
 
 The worker does NOT stop because:
