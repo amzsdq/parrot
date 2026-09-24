@@ -1,68 +1,19 @@
 {
   "schema": 1,
-  "purpose": "Deterministic route-state contract vectors for the v0.8.7 reconstruction path. These are not evidence that production code already passes.",
+  "purpose": "Deterministic route-state and structural-tab contract vectors for the v0.8.7 reconstruction path. These are not evidence that production code already passes.",
   "cases": [
-    {
-      "id": "strong-user-message-receipt",
-      "initial": {"status": "pending", "beforeUserCount": 4, "generating": false},
-      "observation": {"afterUserCount": 5, "generating": false, "composerCleared": true},
-      "expected": {"status": "delivered", "autoRedispatch": false}
-    },
-    {
-      "id": "strong-generation-receipt",
-      "initial": {"status": "pending", "beforeUserCount": 4, "generating": false},
-      "observation": {"afterUserCount": 4, "generating": true, "composerCleared": true},
-      "expected": {"status": "delivered", "autoRedispatch": false}
-    },
-    {
-      "id": "composer-clear-is-not-proof",
-      "initial": {"status": "pending", "beforeUserCount": 4, "generating": false},
-      "observation": {"afterUserCount": 4, "generating": false, "composerCleared": true},
-      "expected": {"status": "ambiguous", "autoRedispatch": false, "persistOutboxBeforeNotify": true}
-    },
-    {
-      "id": "composer-change-is-not-proof",
-      "initial": {"status": "pending", "beforeUserCount": 4, "generating": false},
-      "observation": {"afterUserCount": 4, "generating": false, "composerChanged": true},
-      "expected": {"status": "ambiguous", "autoRedispatch": false, "persistOutboxBeforeNotify": true}
-    },
-    {
-      "id": "ambiguous-periodic-processing",
-      "initial": {"status": "ambiguous", "attempts": 1},
-      "event": {"type": "periodic_tick"},
-      "expected": {"status": "ambiguous", "dispatchCountDelta": 0}
-    },
-    {
-      "id": "ambiguous-reconciliation",
-      "initial": {"status": "pending", "attempts": 1},
-      "event": {"type": "reconcile_ambiguity_receipt"},
-      "expected": {"status": "ambiguous", "dispatchCountDelta": 0}
-    },
-    {
-      "id": "manual-retry",
-      "initial": {"status": "ambiguous", "attempts": 1},
-      "event": {"type": "manual_retry"},
-      "expected": {"status": "pending", "authorizedDispatches": 1}
-    },
-    {
-      "id": "manual-resolve",
-      "initial": {"status": "ambiguous", "attempts": 1},
-      "event": {"type": "manual_resolve", "at": 2000},
-      "expected": {"status": "resolved", "resolvedAt": 2000, "futureAutoDispatch": false}
-    },
-    {
-      "id": "prune-mixed-terminal-history",
-      "initialCounts": {"pending": 1, "delivered": 250, "resolved": 250},
-      "maxRouteRecords": 300,
-      "expectedCounts": {"active": 1, "terminal": 299, "total": 300},
-      "expected": {"activeAlwaysRetained": true, "terminalNewestFirst": true}
-    },
-    {
-      "id": "prune-active-over-cap",
-      "initialCounts": {"pending": 320},
-      "maxRouteRecords": 300,
-      "expectedCounts": {"active": 320, "terminal": 0, "total": 320},
-      "expected": {"activeAlwaysRetained": true}
-    }
+    {"id":"strong-user-message-receipt","initial":{"status":"pending","beforeUserCount":4,"generating":false},"observation":{"afterUserCount":5,"generating":false,"composerCleared":true},"expected":{"status":"delivered","autoRedispatch":false}},
+    {"id":"strong-generation-receipt","initial":{"status":"pending","beforeUserCount":4,"generating":false},"observation":{"afterUserCount":4,"generating":true,"composerCleared":true},"expected":{"status":"delivered","autoRedispatch":false}},
+    {"id":"composer-clear-is-not-proof","initial":{"status":"pending","beforeUserCount":4,"generating":false},"observation":{"afterUserCount":4,"generating":false,"composerCleared":true},"expected":{"status":"ambiguous","autoRedispatch":false,"persistOutboxBeforeNotify":true}},
+    {"id":"composer-change-is-not-proof","initial":{"status":"pending","beforeUserCount":4,"generating":false},"observation":{"afterUserCount":4,"generating":false,"composerChanged":true},"expected":{"status":"ambiguous","autoRedispatch":false,"persistOutboxBeforeNotify":true}},
+    {"id":"ambiguous-periodic-processing","initial":{"status":"ambiguous","attempts":1},"event":{"type":"periodic_tick"},"expected":{"status":"ambiguous","dispatchCountDelta":0}},
+    {"id":"ambiguous-reconciliation","initial":{"status":"pending","attempts":1},"event":{"type":"reconcile_ambiguity_receipt"},"expected":{"status":"ambiguous","dispatchCountDelta":0}},
+    {"id":"manual-retry","initial":{"status":"ambiguous","attempts":1},"event":{"type":"manual_retry"},"expected":{"status":"pending","authorizedDispatches":1}},
+    {"id":"manual-resolve","initial":{"status":"ambiguous","attempts":1},"event":{"type":"manual_resolve","at":2000},"expected":{"status":"resolved","resolvedAt":2000,"futureAutoDispatch":false}},
+    {"id":"prune-mixed-terminal-history","initialCounts":{"pending":1,"delivered":250,"resolved":250},"maxRouteRecords":300,"expectedCounts":{"active":1,"terminal":299,"total":300},"expected":{"activeAlwaysRetained":true,"terminalNewestFirst":true}},
+    {"id":"prune-active-over-cap","initialCounts":{"pending":320},"maxRouteRecords":300,"expectedCounts":{"active":320,"terminal":0,"total":320},"expected":{"activeAlwaysRetained":true}},
+    {"id":"tab-discarded","tab":{"discarded":true,"frozen":false},"expected":{"structuralState":"discarded","ordinaryContentFailure":false}},
+    {"id":"tab-frozen-chrome132-plus","tab":{"discarded":false,"frozen":true},"expected":{"structuralState":"frozen","ordinaryContentFailure":false,"messageMayBeQueuedUntilUnfreeze":true}},
+    {"id":"tab-frozen-property-unsupported","tab":{"discarded":false},"expected":{"frozenSupport":"unknown","mustNotInferFrozenFalse":true}}
   ]
 }
