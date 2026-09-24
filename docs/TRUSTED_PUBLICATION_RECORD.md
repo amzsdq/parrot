@@ -86,12 +86,31 @@ Minimum design for that workflow after M6 PASS:
 6. **No privileged PR bridge.** Never use `pull_request_target`, `issue_comment`, or `workflow_run` as a bridge that obtains write/OIDC/attestation authority and then checks out, downloads, sources, or executes PR/fork-controlled code or artifacts. GitHub explicitly treats artifacts from other workflows as untrusted data in this class of design.
 7. **Attest last from derived bytes.** Generate the publication record only after the final ZIP and `.ready` are immutable and their digests are computed by the trusted job. Attest the exact record path that is subsequently published; do not accept caller-supplied digest fields as authoritative.
 
+### Source authorization and dispatch-ref gate
+
+A full 40-hex input is immutable as an identifier, but it is not authorization. If a release workflow accepts `release_repo_sha` as an arbitrary dispatch input and then attests it, the source identity is circular/self-asserted: the caller chooses the claim that the signer later authenticates. GitHub also permits `workflow_dispatch` runs against a selected branch or tag, so a signer path alone must not make an arbitrary dispatch ref trusted.
+
+The preferred M7 design is therefore to remove caller-selected source identity entirely:
+
+1. the dedicated workflow exists on the protected default branch and is manually dispatched by an authorized maintainer only after M6 PASS;
+2. the workflow fails closed unless `github.ref` is exactly the canonical protected default-branch ref (currently expected to be `refs/heads/main` once the workflow is implemented and reviewed); do not accept a tag, release branch, or API/CLI-selected alternate ref;
+3. set `release_repo_sha` from the event's immutable `github.sha`, not from a workflow input, branch lookup performed later, tag lookup, or caller-supplied SHA;
+4. checkout exactly `${{ github.sha }}` detached and verify `git rev-parse HEAD == "$GITHUB_SHA"` before any build or record construction;
+5. carry that same SHA unchanged into provenance, the publication record, and attestation source identity. Consumer `--source-digest` must match it;
+6. do not re-resolve `main` after the run starts. The branch may advance normally; the event-captured commit remains the authorized source for that run.
+
+This makes the maintainer's dispatch of the canonical protected branch at its then-current immutable event SHA the authorization act, rather than allowing the workflow to authenticate its own arbitrary SHA input. If stronger human separation is later required, put the publication job behind a reviewed GitHub Environment approval, but do not substitute environment approval for exact source binding.
+
+Mutable pre-publication tags are not an authorization root. A tag can only serve that role if repository policy independently prevents its update/deletion by the relevant actors. Prefer the event-captured canonical-branch SHA for builder authorization. After publication, GitHub immutable releases are an additional delivery-integrity control: their associated tag and release assets are locked and GitHub creates a release attestation. That post-publication immutability complements, but does not replace, pre-build source authorization.
+
+When the real release workflow exists, add executable regressions proving that an alternate dispatch ref and any caller-supplied source SHA cannot alter the authorized `release_repo_sha`. Until then these remain implementation gates, not speculative pattern tests.
+
 These are implementation gates, not a request to create the workflow now. Once the real workflow exists, executable regressions should target its actual policy: wrong signer workflow, wrong source commit/ref, and any accepted untrusted-input path that can alter the attested record. Do not add speculative pattern-only tests before there is executable workflow behavior to test.
 
 ## Publication ordering
 
 1. M6 must be fully PASS against exact candidate `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`.
-2. Freeze `release_repo_sha`.
+2. Freeze `release_repo_sha` from the authorized release-workflow event SHA under the source-authorization gate above.
 3. Build final release and sidecars; create `.ready` last.
 4. Compute final ZIP SHA-256 and `.ready` SHA-256 after publication files are immutable.
 5. Construct the v1 publication record from the frozen repository SHA and those two digests.
