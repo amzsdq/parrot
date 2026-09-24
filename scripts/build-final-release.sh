@@ -10,7 +10,7 @@ RELEASE_SHA=$(git rev-parse HEAD)
 bash scripts/verify-release-preflight.sh "$CANDIDATE_SHA"
 
 echo "Verifying live browser evidence for candidate $CANDIDATE_SHA"
-GATE_OUTPUT=$(node scripts/verify-live-smoke-result.mjs "$RESULT" "$CANDIDATE_SHA")
+GATE_OUTPUT=$(bash scripts/verify-candidate-live-evidence.sh "$RESULT" "$CANDIDATE_SHA")
 echo "$GATE_OUTPUT"
 
 echo "PASS: release extension tree is identical to M6 candidate $CANDIDATE_SHA (release repo $RELEASE_SHA)"
