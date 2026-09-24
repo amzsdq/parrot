@@ -5,18 +5,19 @@ Current line: v0.8.7-reconstruction
 
 ## Milestone execution model
 
-- `docs/MILESTONES.md` is the durable program-level work supply above BATON.
-- The relay uses `CONTRACT -> BUILD -> EVALUATE -> FIX -> DONE`.
-- Criteria are recorded as PASS / FAIL / UNVERIFIED; UNVERIFIED is never treated as PASS.
-- `docs/BATON.md` remains the latest-only ~14-minute tactical slice, but every baton must identify `MILESTONE_ID`, `MILESTONE_PHASE`, and `ACTIVE_CRITERION` and be derived from the earliest unmet required milestone criterion.
-- Finishing one baton is not a stop condition. If a criterion finishes early, continue to the next criterion/milestone while useful work remains.
-- No separate mutable `STATE.json` is introduced because BATON + MILESTONES + DEVELOPMENT_CHECKPOINT already cover immediate, program, and durable-summary state; duplicating mutable state would increase reconciliation risk.
+- `docs/MILESTONES.md` is the single durable work-supply and progress authority. There is no active BATON layer.
+- Every milestone must pass `PLAN -> BUILD -> VERIFY -> FIX -> VERIFY ... -> DONE`.
+- PASS / FAIL / UNVERIFIED are explicit; UNVERIFIED is never PASS.
+- A milestone is DONE only when every required criterion is PASS with durable evidence.
+- Completing a criterion, milestone, CI run, ZIP, or checkpoint is not a normal stop condition.
+- Normal stop conditions are only `ALL_MILESTONES_DONE` or verified `SUCCESSOR_HANDOFF_COMPLETE`.
+- Historical BATON entries in DEVELOPMENT_LOG are legacy history only and are not read for continuation.
 
 ## Relay / evidence model
 
-- `docs/BATON.md` is latest-only and is read first on every wake.
-- `docs/DEVELOPMENT_LOG.md` is append-only full baton history.
-- Normal package target is ~14 useful active minutes; shorter packages require a concrete unavoidable `SHORT_PACKAGE_REASON`.
+- `docs/MILESTONES.md` is read first on every wake for current phase, unmet criteria, and next work.
+- `docs/DEVELOPMENT_LOG.md` is historical evidence only; old BATON snapshots are legacy and never drive current work.
+- The scheduler normally prearms a successor wake at +14 minutes, but 14 minutes is not a stop gate. The current OWNER continues useful work until verified successor handoff or all milestones are DONE.
 - Issue #1 `[PARROT_RELAY_WORK_MARKERS]` WAKE/START/END comments are the sole timing authority. Fetch the concrete comment REST resource when connector comment listings omit `created_at`.
 
 ## Current implementation state
