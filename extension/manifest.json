@@ -11,5 +11,6 @@
     "js": ["route-state.js", "chatgpt-adapter.js", "signal-scanner.js", "prompt-compose.js", "repeat-policy.js", "runner-policy.js", "runner-registry.js", "content.js"],
     "run_at": "document_idle"
   }],
-  "action": { "default_title": "앵무새", "default_popup": "popup.html" }
+  "action": { "default_title": "앵무새", "default_popup": "popup.html" },
+  "options_page": "popup.html"
 }
