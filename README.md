@@ -6,7 +6,7 @@ ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 �
 
 ## Current version
 
-`v0.8.6`
+`v0.8.7` reconstruction in progress
 
 ## Current capabilities
 
@@ -18,7 +18,7 @@ ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 �
 - 일반 반복 전송과 WAKE/MESSAGE delivery는 click 반환이 아니라 새 user-message DOM 또는 assistant generation 시작을 strong receipt로 사용합니다.
 - receipt가 확인되지 않은 route는 `ambiguous`로 fence하고 자동 재전송하지 않습니다.
 - ambiguity receipt는 background messaging 전에 bounded `chrome.storage.local` outbox에 기록됩니다.
-- v0.8.6은 `delivered`뿐 아니라 수동 `resolved` route도 terminal history budget에 포함해 durable route queue의 무제한 성장을 막습니다.
+- `delivered`와 수동 `resolved` route는 terminal history이며 active records는 history cap 때문에 제거하지 않습니다.
 
 ## Protocol
 
@@ -35,39 +35,39 @@ https://parrot.invalid/message/<sourceRunId>/<eventId>?to=<targetRouteId>&ref=<r
 
 `MESSAGE`의 `ref`는 GitHub URL, 문서 ID 등 수신 Worker가 직접 확인할 참조입니다. Parrot는 참조 대상의 본문을 읽지 않습니다.
 
-## Default completion instruction
-
-```text
-반드시 사용자가 요청한 전체 작업이 실제로 완료된 경우에만 아래 완료 신호를 한 번 출력하고, 진행 중이거나 일부 단계만 완료된 경우에는 출력하지 마세요.
-
-{{SIGNAL_URL}}
-```
-
-## Installation
-
-1. versioned ZIP을 압축 해제합니다.
-2. `chrome://extensions`에서 개발자 모드를 켭니다.
-3. `압축해제된 확장 프로그램을 로드합니다`를 선택합니다.
-4. 업데이트 시 확장 프로그램을 다시 로드합니다.
-5. 이미 열려 있던 ChatGPT 탭은 한 번 새로고침합니다.
-
 ## Repository verification
 
-Repository source가 완전한 확장프로그램으로 재구축 가능한지 확인하려면 repository root에서 다음을 실행합니다.
+Repository root에서 다음 gates를 실행합니다.
 
 ```text
+node scripts/test-route-state.mjs
+node scripts/test-route-queue.mjs
+node scripts/validate-contracts.mjs
+node scripts/validate-v087-integration.mjs
 node scripts/verify-repo.mjs
 ```
 
-v0.8.7 reconstruction contract vector 자체의 JSON/schema/unique-id 무결성은 다음으로 확인합니다.
+GitHub Actions의 `Route State Contract` workflow도 위 production integration/rebuildability gates를 실행합니다. Contract JSON이 정상이라는 사실과 production runtime이 통과한다는 사실은 구분합니다.
 
-```text
-node scripts/validate-contracts.mjs
-```
+## v0.8.7 reconstruction status
 
-`validate-contracts` 통과는 contract fixture가 정상이라는 뜻일 뿐 production runtime이 contract를 통과했다는 뜻은 아닙니다. Production 구현 후에는 fixture를 실제 runtime test harness에 연결해야 합니다.
+Exact v0.8.6 `background.js`, `content.js`, `dashboard.js` bytes는 확보되지 않았으므로 해당 runtime을 v0.8.6 byte-exact라고 주장하지 않습니다. 대신 recovered v0.8.0 behavior와 검증된 later contracts를 근거로 v0.8.7 runtime을 재구성 중입니다.
 
-`verify-repo`는 manifest JSON parse, manifest/HTML이 참조하는 local file 존재 여부, repository JavaScript의 `node --check` syntax를 확인합니다. 하나라도 빠지면 non-zero로 실패합니다. 현재 source-of-truth migration이 아직 끝나지 않았으므로 missing runtime source가 복구되기 전에는 이 gate가 실패하는 것이 정상입니다. Gate를 통과하기 전에는 repository를 완전한 rebuildable source로 인증하지 않습니다.
+현재 repository에는 다음 production slice가 있습니다.
+
+- classic MV3 `background.js`가 `route-state.js`와 `route-queue.js`를 로드합니다.
+- periodic routing은 pending-only state guard를 사용합니다.
+- ambiguity reconciliation은 state-only이며 manual Retry/Resolve가 별도 message contract입니다.
+- `content.js`는 click 전 user-message count를 잡고 count 증가 또는 generation start만 strong receipt로 인정합니다.
+- strong receipt timeout은 ambiguous이며, 구조 receipt를 local outbox에 먼저 저장한 뒤 background에 알립니다.
+- manifest는 v0.8.7/classic worker/content load order로 전환했습니다.
+- dashboard controller는 worker pagination/search/filter와 ambiguous Retry/Resolve를 제공합니다.
+
+주의: repository gate 통과는 실제 ChatGPT 브라우저 smoke test를 대체하지 않습니다. 실제 selector/send/receipt 동작과 완성된 v0.8.7 ZIP은 별도 검증 대상입니다.
+
+## popup.js provenance
+
+Exact target bytes/blob은 확보되어 있지만 현재 repository `popup.js`는 아직 네 numeric clamp/default가 빠진 blob입니다. 이 차이는 정확히 진단되어 있으며 release 전에 byte-preserving repair 또는 동등한 검증된 수정이 필요합니다. 실패한 부분 교체 시도로 파일 전체가 손상된 적이 있으나 즉시 이전 blob으로 복구했고 CI rebuildability gate가 다시 통과했습니다.
 
 ## Development principles
 
@@ -79,6 +79,4 @@ node scripts/validate-contracts.mjs
 - WAKE / MESSAGE routing without semantic chat reading
 - external UX/API references before major UI or architecture changes
 
-## Source status
-
-GitHub source-of-truth migration is in progress. `extension/manifest.json` and several UI/support files are synchronized to the v0.8.6 artifact, but the full v0.8.6 package has not yet been committed/rebuilt solely from repository source. `background.js`, `content.js`, and `dashboard.js` are still missing. `popup.js` exact target bytes and the precise four-line regression causing its 53-byte drift are now known, but the repository replacement is still pending. See `docs/DEVELOPMENT_CHECKPOINT.md`.
+See `docs/DEVELOPMENT_CHECKPOINT.md`, `docs/RECONSTRUCTION_PLAN_v0.8.7.md`, and latest-only `docs/BATON.md` for durable development state.
