@@ -44,3 +44,18 @@ assert(resolved.ok && resolved.item.status === 'resolved' && !resolved.dispatche
 
 const delivered = await api.recordDelivered('a1', { deliveredAt: 6000 });
 assert(delivered.status === 'delivered' && delivered.deliveredAt === 6000, 'strong receipt marks delivered');
+
+let releaseDispatch;
+let concurrentDispatches = 0;
+const gate = new Promise((resolveGate) => { releaseDispatch = resolveGate; });
+const concurrentApi = context.globalThis.ParrotRouteQueue.createRouteQueueApi({
+  load: async () => [{ queueId: 'c1', status: 'pending' }],
+  save: async () => {},
+  dispatch: async () => { concurrentDispatches += 1; await gate; return { ok: true }; }
+});
+const first = concurrentApi.processEligible();
+await new Promise((resolveTick) => setImmediate(resolveTick));
+const second = await concurrentApi.processEligible();
+releaseDispatch();
+await first;
+assert(concurrentDispatches === 1 && second[0]?.result?.reason === 'dispatch_in_flight', 'same-worker concurrent ticks cannot double-dispatch one queue id');
