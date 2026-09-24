@@ -37,9 +37,18 @@ fi
 echo "PASS: release extension tree is identical to M6 candidate $CANDIDATE_SHA (release repo $RELEASE_SHA)"
 
 if grep -q 'LIMITATION: S9/S10 NOT_OBSERVED' <<<"$GATE_OUTPUT"; then
-  test -f "$NOTES"
-  grep -Eq 'S9|ambigu' "$NOTES"
-  grep -Eq 'S10|cooldown|rate-limit' "$NOTES"
+  if [ ! -f "$NOTES" ]; then
+    echo "FAIL: live evidence contains NOT_OBSERVED S9/S10 but release notes file is missing: $NOTES" >&2
+    exit 1
+  fi
+  if ! grep -Eiq 'S9|ambigu' "$NOTES"; then
+    echo "FAIL: release notes do not describe the S9/ambiguity limitation" >&2
+    exit 1
+  fi
+  if ! grep -Eiq 'S10|cooldown|rate-limit' "$NOTES"; then
+    echo "FAIL: release notes do not describe the S10/cooldown limitation" >&2
+    exit 1
+  fi
   echo 'PASS: NOT_OBSERVED live limitations are represented in release notes.'
 fi
 node scripts/verify-repo.mjs
