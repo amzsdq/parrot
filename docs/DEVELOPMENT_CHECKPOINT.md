@@ -18,15 +18,15 @@ M0 scope/relay DONE. M1 routing/delivery DONE. M2 runner lifecycle/reload DONE (
 - `scripts/verify-live-smoke-result.mjs` requires exact candidate binding, authenticated-session structural provenance, real ChatGPT target URLs, ISO UTC timestamps, exactly one S1..S11 row, required evidence, decision consistency, and explicit NOT_OBSERVED limitations. Duplicate rows are rejected. Exact-head duplicate-row hardening run `35992843454` succeeded.
 
 ## M7 preparation while authenticated browser evidence is pending
-- Commit `38f959e7ba631ac2e7be217e329f0dcc9cd0d5e4` made the final builder explicitly fail closed when NOT_OBSERVED evidence lacks release-note coverage. Exact-head run `35992931371` succeeded.
-- The independent limitation-note regression is confirmed in integration run `35993385261`: `scripts/test-release-limitations.sh` completed SUCCESS together with the full Route State Contract job.
-- Final-builder boundary coverage is explicit and CI-confirmed. `scripts/test-final-release-boundaries.sh` guards dirty unstaged/staged/untracked `extension/`, candidate-tree identity, candidate-bound live verification, limitation gate invocation, stale-output cleanup, ZIP integrity, checksum, and provenance fields. Integration head `5b85b9736aba16124f72149afffb6f732219cc99`; Route State Contract run `35993671018` completed SUCCESS, including the new boundary regression step.
-- The current boundary test is intentionally structural. The next useful hardening is an executable harness that proves the builder exits non-zero for dirty-tree and candidate-drift cases before authenticated-live evidence is needed, reducing reliance on source-pattern assertions.
-- These release-tooling tests do not substitute for authenticated M6 browser evidence and do not close M6/M7. Product bytes remain intentionally untouched.
+- Limitation-note regression is CI-confirmed in run `35993385261`; final-builder structural boundary regression is CI-confirmed in run `35993671018`.
+- Release preflight is now executable shared production/test logic. `scripts/verify-release-preflight.sh` rejects unstaged, staged, or untracked `extension/` changes and committed candidate-tree drift before authenticated live evidence is consulted. `scripts/build-final-release.sh` calls this same preflight, avoiding test/production divergence.
+- `scripts/test-release-preflight.sh` clones the repository into an isolated temporary worktree and exercises clean-pass plus four non-zero rejection cases: unstaged product change, staged product change, untracked product file, and committed candidate drift. No product `extension/` bytes were intentionally changed on main.
+- Route State Contract now syntax-checks and executes the new preflight regression. Integration head `fb279e945977a856cce89bd00e51907f1aa456a3`; run `35994081636` started and is still in progress at this checkpoint, so CI success is not yet claimed.
+- These release-tooling tests do not substitute for authenticated M6 browser evidence and do not close M6/M7.
 
 ## Remaining path
-1. Build an executable final-builder preflight test harness for dirty-tree and candidate-tree drift rejection, preferably by extracting or isolating preflight logic so it can run without authenticated live evidence.
-2. Keep the production builder consuming the same preflight logic to avoid test/production divergence, then run it in Route State Contract CI.
+1. Resolve Route State Contract run `35994081636`; if the executable preflight test fails, inspect the failing case and repair it immediately.
+2. After CI success, harden the next final-release boundary with executable behavior rather than source-pattern-only assertions, prioritizing output/provenance cleanup or candidate-bound invocation behavior.
 3. Obtain a supported authenticated interactive Chrome+ChatGPT surface and execute M6-C2 onward against exact candidate.
 4. After M6 PASS, re-verify candidate tree identity, freeze release-repository SHA, run the final builder, persist ZIP/file-list/hash/provenance evidence, and close M7 only when every criterion passes.
 
