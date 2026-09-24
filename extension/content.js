@@ -58,6 +58,18 @@
     return evidence.delivered ? { ok: true, evidence } : { ok: false, reason: 'strong_receipt_timeout', evidence, attempted: true };
   }
 
+  async function composeTargetPrompt(target) {
+    const targets = await loadTargets();
+    return ParrotPromptCompose.compose(target, targets, { firstSend: Number(target?.sentCount || 0) === 0 });
+  }
+
+  async function stopIfRequired(target, now = Date.now()) {
+    const reason = ParrotRepeatPolicy.stopReason(target, now);
+    if (!reason || reason === 'not_running') return reason;
+    await patchTarget(target.id, { status: 'stopped', stopReason: reason });
+    return reason;
+  }
+
   async function waitUntilIdleOrStopped(targetId) {
     let sawGenerating = globalThis.ParrotSiteAdapter.isGenerating();
     while (true) {
@@ -76,11 +88,10 @@
     while (runners.get(targetId) === token) {
       const target = await getTarget(targetId);
       if (!target || target.status !== 'running' || target.mode !== 'response') break;
-      if (target.maxRepeats > 0 && Number(target.sentCount || 0) >= Number(target.maxRepeats)) { await patchTarget(targetId, { status: 'stopped', stopReason: 'max_repeats' }); break; }
-      if (target.runtimeMin > 0 && target.startedAt && Date.now() - Number(target.startedAt) >= Number(target.runtimeMin) * 60000) { await patchTarget(targetId, { status: 'stopped', stopReason: 'runtime_limit' }); break; }
+      if (await stopIfRequired(target)) break;
       if (globalThis.ParrotSiteAdapter.isGenerating()) { await sleep(500); continue; }
 
-      const result = await sendPrompt(String(target.prompt || ''));
+      const result = await sendPrompt(await composeTargetPrompt(target));
       if (!result.ok) {
         if (result.reason === 'generating') { await sleep(500); continue; }
         await patchTarget(targetId, { lastError: result.reason || 'send_failed' });
@@ -94,6 +105,36 @@
       await sleep(Math.max(0, Number(fresh?.delaySec || 0) * 1000));
     }
     if (runners.get(targetId) === token) runners.delete(targetId);
+  }
+
+  async function runIntervalMode(targetId, initialDelayMs = 0) {
+    const token = crypto.randomUUID(); runners.set(targetId, token);
+    if (initialDelayMs > 0) await sleep(initialDelayMs);
+    while (runners.get(targetId) === token) {
+      const target = await getTarget(targetId);
+      if (!target || target.status !== 'running' || target.mode !== 'interval') break;
+      if (await stopIfRequired(target)) break;
+      if (!ParrotRepeatPolicy.intervalDue(target)) { await sleep(500); continue; }
+      if (globalThis.ParrotSiteAdapter.isGenerating()) { await sleep(500); continue; }
+
+      const result = await sendPrompt(await composeTargetPrompt(target));
+      if (!result.ok) {
+        if (result.reason === 'generating') { await sleep(500); continue; }
+        await patchTarget(targetId, { lastError: result.reason || 'send_failed' });
+        await sleep(Math.max(1000, Number(target.delaySec || 3) * 1000));
+        continue;
+      }
+      await patchTarget(targetId, { sentCount: Number(target.sentCount || 0) + 1, lastSentAt: Date.now(), lastError: '' });
+      await sleep(500);
+    }
+    if (runners.get(targetId) === token) runners.delete(targetId);
+  }
+
+  function startRunner(targetId, mode, initialDelayMs = 0) {
+    if (runners.has(targetId)) return false;
+    const runner = mode === 'interval' ? runIntervalMode : runResponseMode;
+    runner(targetId, initialDelayMs).catch(() => {});
+    return true;
   }
 
   function routePayload(route) { return String(route?.payload ?? route?.prompt ?? route?.message ?? ''); }
@@ -127,9 +168,9 @@
     if (message?.type === 'PARROT_START') {
       getTarget(message.targetId).then((target) => {
         if (!target || target.status !== 'running') return sendResponse({ ok: false, reason: 'target_not_running' });
-        if (target.mode !== 'response') return sendResponse({ ok: false, reason: 'interval_mode_not_reconstructed' });
-        runResponseMode(message.targetId, Math.max(0, Number(message.delayMs || 0))).catch(() => {});
-        sendResponse({ ok: true });
+        if (!['response', 'interval'].includes(target.mode)) return sendResponse({ ok: false, reason: 'unsupported_mode' });
+        const started = startRunner(message.targetId, target.mode, Math.max(0, Number(message.delayMs || 0)));
+        sendResponse({ ok: true, started, mode: target.mode });
       }).catch((error) => sendResponse({ ok: false, reason: String(error?.message || error) }));
       return true;
     }
