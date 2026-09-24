@@ -32,20 +32,24 @@
 ## M6 acceptance contract
 - Required live cases S1–S8 and S11 must be PASS against the exact M5 candidate SHA.
 - S9 and S10 may be PASS or explicit NOT_OBSERVED only; NOT_OBSERVED remains a published limitation, never an implicit PASS.
-- `scripts/verify-live-smoke-result.mjs` must accept the completed result file bound to the exact candidate SHA.
+- `scripts/verify-live-smoke-result.mjs` must accept the completed result file bound to the exact candidate SHA and its decision summary must agree with the case rows.
 - Headless/static/local extension-page evidence cannot substitute for authenticated ChatGPT behavior.
 - A real observed product FAIL reopens the relevant earlier milestone and invalidates release readiness until corrected and retested.
+
+## Release provenance rule
+M6 validates the exact candidate **extension tree**. Documentation and release-tooling commits may occur afterward, but `extension/` must remain byte-for-byte Git-equivalent to candidate `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`. `scripts/build-final-release.sh` fails closed if `extension/` differs. Any later extension change requires a new candidate and fresh M6 validation. The final artifact records both the M6 candidate SHA and the release-repository SHA in its provenance sidecar.
 
 ## Final release checklist — intentionally open
 - [ ] Authenticated real Chrome + ChatGPT result file exists and is candidate-SHA-bound.
 - [ ] Required S1–S8 + S11 all PASS.
 - [ ] S9/S10 are PASS or explicit NOT_OBSERVED with limitations carried here.
-- [ ] Machine live-evidence verifier passes.
+- [ ] Machine live-evidence verifier passes, including decision-summary consistency.
 - [ ] Any M6 regressions are fixed and retested; no unresolved observed FAIL remains.
 - [ ] M0..M6 all DONE after retest.
-- [ ] Final source SHA is frozen and recorded.
-- [ ] `scripts/build-final-release.sh` is run from that frozen source with the verified live-result file and exact frozen SHA.
-- [ ] Final release ZIP integrity test passes; file list and SHA-256 are recorded.
+- [ ] Final release repository SHA is frozen and recorded.
+- [ ] `extension/` is unchanged from the exact M6 candidate SHA; otherwise create a new candidate and repeat M6.
+- [ ] `scripts/build-final-release.sh` is run with the verified live-result file and exact M6 candidate SHA.
+- [ ] Final release ZIP integrity test passes; file list, SHA-256, candidate SHA, and release-repository SHA are recorded.
 - [ ] README install/use instructions match final behavior and artifact identity.
 - [ ] Limitations reflect S9/S10 observation status and deferred provider adapters.
 - [ ] M7 evidence is durable and independently reconstructable; only then PROGRAM_COMPLETE.
