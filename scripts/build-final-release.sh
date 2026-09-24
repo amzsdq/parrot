@@ -8,11 +8,6 @@ NOTES=${4:-docs/RELEASE_NOTES_DRAFT.md}
 RELEASE_SHA=$(git rev-parse HEAD)
 PROVENANCE="$OUT.provenance.txt"
 
-case "$OUT" in
-  *.zip) ;;
-  *) echo "FAIL: release output must end in .zip" >&2; exit 1 ;;
-esac
-
 bash scripts/verify-release-preflight.sh "$CANDIDATE_SHA"
 
 echo "Verifying live browser evidence for candidate $CANDIDATE_SHA"
@@ -30,7 +25,7 @@ rm -f "$GATE_OUTPUT_FILE"
 trap - EXIT
 
 node scripts/verify-repo.mjs
-rm -f "$OUT" "$OUT.sha256" "$OUT.files.txt" "$PROVENANCE"
+bash scripts/prepare-release-output.sh "$OUT"
 (cd extension && zip -X -r "../$OUT" . -x '*.DS_Store')
 unzip -t "$OUT"
 unzip -Z1 "$OUT" | LC_ALL=C sort > "$OUT.files.txt"
