@@ -1,6 +1,6 @@
 # Parrot Baton
 
-This file is the canonical immediate continuation pointer for the next Parrot relay wake. Keep ONLY the latest baton here; history is mirrored to `docs/DEVELOPMENT_LOG.md`.
+Latest-only continuation pointer; full snapshots are mirrored to `docs/DEVELOPMENT_LOG.md`.
 
 CURRENT_VERSION=v0.8.7-reconstruction
 STATUS=CONTINUE
@@ -12,45 +12,43 @@ SHORT_PACKAGE_REASON=NONE
 WORK_TIME_MARKER_ISSUE=amzsdq/parrot#1
 
 CURRENT_TASK=
-Wire the now-staged/tested prompt composer into response execution, then restore interval execution and structural cooldown behavior.
+Wire tested prompt/repeat policy primitives into runtime, then close interval/cooldown/dashboard gaps.
 
 COMPLETED_PREVIOUS=
-- Structural `parrot.invalid` signal scanner + durable COMPLETE/WAKE/MESSAGE ingestion are present without assistant-prose semantic reading.
-- Canonical `signal-protocol.js` is used by background and has CI parser/template vectors; stable signalId dedupes repeated observations.
-- Response-mode runner and strong receipt/ambiguity-outbox path are present.
-- Added canonical `prompt-compose.js`: deterministic SELF/TARGETS directory, WAKE/MESSAGE URL patterns, once-per-run onboarding composition, and exact completion-signal instruction composition.
-- Added `test-prompt-compose.mjs`; workflow now syntax-checks and executes prompt composition vectors in addition to route/signal/rebuildability gates. Latest prompt-compose workflow was queued at handoff; verify exact-head result before relying on it.
-- Gap audit now correctly marks signal discovery closed and prompt composition staged-but-not-wired.
-- popup.js remains safely restored to pre-attempt blob after the earlier failed whole-file replacement; exact four-clamp repair is still open and must use a byte-safe method.
+- Structural href-only COMPLETE/WAKE/MESSAGE discovery and durable signalId-deduped route/event creation are implemented; no assistant-prose semantic monitoring.
+- `signal-protocol.js` is canonical in background and parser/template vectors pass CI.
+- Response-mode runner, strong user-count/generation receipt, ambiguity outbox-before-notify, and pending-only queue path are present.
+- `prompt-compose.js` + `test-prompt-compose.mjs` define/test once-first-send onboarding directory/URL patterns and exact completion instruction composition. CI run 35963240023 passed all gates including prompt vectors.
+- `repeat-policy.js` + `test-repeat-policy.mjs` define max-repeat/runtime stop rules, interval due calculation, rate-limit cooldown 10→20→40→60 minutes, and transient cooldown 2→5→10→20 minutes. CI run 35963331882 passed syntax, all policy vectors, contracts, integration guard, and rebuildability.
+- Gap audit marks signal discovery closed and prompt composition staged-but-not-wired.
+- popup.js remains safely at restored blob `b2df626c...`; known four-clamp exact repair remains open and requires byte-safe editing.
 
 NEXT_ACTION=
-1. Verify latest exact-head CI including `test-prompt-compose.mjs`. If it fails, repair the actual contract rather than weakening tests.
-2. Load `prompt-compose.js` before `content.js` and make response runner call `ParrotPromptCompose.compose(target, allTargets, {firstSend: sentCount===0})` instead of raw `target.prompt`. Confirm onboarding appears only on first send while completion instruction remains on each work prompt as intended.
-3. Add integration guard proving popup target fields → composer → content send are connected.
-4. Reconstruct interval mode with one runner per target and intervalMin/maxRepeats/runtime/status semantics; establish a storage/background/content wake path because popup currently explicitly arms only response mode. Fence duplicate runners.
-5. Reconstruct error-surface cooldown ladders: Too-many-requests 10→20→40→60 minutes; other transient error UI 2→5→10→20. Use dialog/alert/toast structural surfaces, never assistant prose.
-6. Converge dashboard tab classification onto canonical route-state primitive.
-7. Update `docs/V087_RUNTIME_GAP_AUDIT.md` only when each gap is actually closed. Keep CI green.
-8. Do not build/release final ZIP until live ChatGPT browser smoke tests cover selectors, send/receipt, signal discovery, cross-tab routing, ambiguity, service-worker lifecycle, repeat modes, cooldown, and dashboard actions.
+1. Load `prompt-compose.js` before content and replace raw response `target.prompt` send with `ParrotPromptCompose.compose(target, allTargets, {firstSend: sentCount===0})`; integration-guard the popup→composer→content seam.
+2. Load/use `repeat-policy.js` in runtime. Reconstruct interval mode with one runner per target and duplicate fencing; respect intervalMin/maxRepeats/runtime/status.
+3. Detect cooldown only from structural error UI surfaces (dialog/alert/toast), classify rate-limit vs transient, and apply the tested ladders. Never inspect assistant prose.
+4. Converge dashboard tab classification onto canonical route-state primitive.
+5. Add deterministic integration guards for the newly wired seams and keep exact-head CI green.
+6. Update gap audit only when gaps actually close. Do not build/release final ZIP until real ChatGPT browser smoke tests validate send/receipt, signal discovery, cross-tab routing, ambiguity, service-worker lifecycle, both repeat modes, cooldown, and dashboard actions.
 
 DONE_CRITERIA=
-- prompt composer is wired and tested end-to-end at code/contract level.
-- interval mode and cooldown ladders are operational and duplicate-fenced.
-- dashboard structural classification has one canonical implementation.
-- CI remains green; gap audit is honest; next baton is ~14 useful minutes.
+- prompt composer and repeat policy are runtime-wired and integration-tested.
+- interval and cooldown behavior are operational and duplicate-fenced.
+- dashboard structural classification is canonicalized.
+- CI remains green; gap audit honest; next baton ~14 useful minutes.
 
 DO_NOT_REPEAT=
 - broad Library search for exact v0.8.6 runtime
 - popup.js 53-byte diagnosis
 - unsafe whole-file popup replacement
-- duplicate signal parser/state implementations
+- duplicate signal/state/policy implementations
 - treating static CI as live browser/release proof
 
 BLOCKER=
-Exact later runtime bytes remain unavailable, so reconstruction is deliberately v0.8.7. Real browser smoke testing remains a release gate.
+Exact later runtime bytes remain unavailable; reconstruction is deliberately v0.8.7. Real browser smoke testing remains a release gate.
 
 SCHEDULER_RULE=
-Preferred/default NEXT_WAKE_DELAY_MINUTES is 14. Shorter is exceptional and requires a concrete unavoidable SHORT_PACKAGE_REASON.
+Preferred/default NEXT_WAKE_DELAY_MINUTES=14. Shorter is exceptional and requires concrete unavoidable SHORT_PACKAGE_REASON.
 
 MEASUREMENT_RULE=
-Use issue #1 WAKE/START/END comments and direct REST fetch of returned comment ids. GitHub created_at is the sole timing authority.
+Issue #1 WAKE/START/END comments + direct REST created_at are the sole timing authority.
