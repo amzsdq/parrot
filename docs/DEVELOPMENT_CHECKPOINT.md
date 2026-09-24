@@ -18,13 +18,17 @@ v0.8.6 fixes durable route-queue history pruning: both `delivered` and manually 
 
 Repository source-of-truth migration remains incomplete. Exact artifact Git blob identity is verified for `manifest.json`, `chatgpt-adapter.js`, `dashboard.html`, `dashboard.css`, `popup.css`, and `popup.html`.
 
-`extension/popup.js` is present but is NOT certified byte-exact. Repository blob is `b2df626c1ba3a2cb95b608f55053d122ca6a5b4c`, 21907 bytes. Recorded v0.8.6 artifact target is blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`, 21960 bytes: a 53-byte size gap.
+`extension/popup.js` is present but is NOT certified byte-exact. Repository blob is `b2df626c1ba3a2cb95b608f55053d122ca6a5b4c`, 21907 bytes. Recorded v0.8.6 artifact target is blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`, 21960 bytes: a 53-byte size gap. Direct GitHub blob lookup of the recorded artifact SHA returns 404, so the target bytes are not recoverable from this repository's Git object database.
 
 Fresh investigation of commit `990a70eef80b7b43627c2ebb76ec857e3feb28ae` shows that the attempted "exact" sync only added four blank lines relative to its parent. Therefore that commit does not explain or close the 53-byte artifact gap. Do not infer missing bytes from this commit.
 
-The actual v0.8.6 ZIP / extracted runtime bytes were not discoverable in the currently searchable conversation/library surface during PARROT-BATON-001R1. Searches found Parrot design/handoff documents, not the v0.8.6 package. Repository releases are empty and only `main` exists. This is an artifact-access blocker for honest byte certification, not proof that the artifact no longer exists elsewhere.
+The actual v0.8.6 ZIP / extracted runtime bytes were not discoverable in the currently searchable conversation/library surface during PARROT-BATON-001R1. Searches found Parrot design/handoff documents, not the v0.8.6 package. Repository releases are empty, only `main` exists, and Git history contains no `content.js` or `dashboard.js`. This is an artifact-access blocker for honest byte certification, not proof that the artifact no longer exists elsewhere.
 
 The full runtime/UI package is still absent from `main`: `background.js`, `content.js`, and `dashboard.js` are missing. Historical commit `8baedeb5327febf724ff3156943610beef2dd22b` contained only a nine-line `background.js` source-sync stub and was intentionally removed by the following commit; it is not authoritative runtime source and must not be resurrected as implementation.
+
+## Rebuildability gate
+
+Added `scripts/verify-repo.mjs`. It parses the manifest, checks manifest and HTML local references, and runs `node --check` over repository JavaScript. The script itself passes `node --check`. A controlled fixture with missing `background.js` and `content.js` correctly returned exit 1 and named both missing manifest references, while accepting present references and valid JavaScript. Full repository execution was not claimed because this runtime container cannot directly clone GitHub; the gate is intentionally expected to fail on current `main` until missing runtime files are restored. README documents the gate and explicitly forbids certifying repository rebuildability before it passes.
 
 ## Verified v0.8.6 baseline
 
@@ -51,10 +55,11 @@ The full runtime/UI package is still absent from `main`: `background.js`, `conte
 1. Recover authoritative v0.8.6 artifact bytes from an available runtime/conversation/library source; do not guess missing source.
 2. Reconcile `popup.js` byte-exactly once those bytes are available.
 3. Commit authoritative `background.js`, `content.js`, and `dashboard.js` from artifact source.
-4. Rebuild ZIP from repository-only source and run JS syntax, manifest parse, ZIP integrity, and artifact-content comparison checks.
-5. Add durable route-state regression fixtures covering `pending → ambiguous → manual retry/resolved → delivered`, outbox reconciliation, and terminal pruning.
-6. Run real ChatGPT browser regression tests for selector/receipt stability.
-7. Exercise discarded/frozen recovery with real Chrome memory-saver behavior before automatic recovery.
+4. Run `node scripts/verify-repo.mjs`; require a clean pass before repository rebuildability certification.
+5. Rebuild ZIP from repository-only source and run ZIP integrity and artifact-content comparison checks.
+6. Add durable route-state regression fixtures covering `pending → ambiguous → manual retry/resolved → delivered`, outbox reconciliation, and terminal pruning.
+7. Run real ChatGPT browser regression tests for selector/receipt stability.
+8. Exercise discarded/frozen recovery with real Chrome memory-saver behavior before automatic recovery.
 
 ## Reference / rationale
 
