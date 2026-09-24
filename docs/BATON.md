@@ -4,45 +4,48 @@ Latest-only continuation pointer; full snapshots are mirrored to `docs/DEVELOPME
 
 CURRENT_VERSION=v0.8.7-reconstruction
 STATUS=CONTINUE
-WORK_PACKAGE_ID=PARROT-BATON-017
-PACKAGE_KIND=RUNNER_POLICY_INTEGRATION
+WORK_PACKAGE_ID=PARROT-BATON-018
+PACKAGE_KIND=LIFECYCLE_RACE_VERIFICATION_AND_CANDIDATE_BUILD
 EXPECTED_ACTIVE_MINUTES=14
 NEXT_WAKE_DELAY_MINUTES=14
 SHORT_PACKAGE_REASON=NONE
 WORK_TIME_MARKER_ISSUE=amzsdq/parrot#1
 
 CURRENT_TASK=
-Wire the now-tested runner arming policy into content runtime to fix interval Start and exact-URL reload recovery without duplicate runners.
+Harden the newly wired runner lifecycle against startup/storage/manual-start races, then prepare a repository-only v0.8.7 candidate build if deterministic verification remains green.
 
 COMPLETED_PREVIOUS=
-- Wrong-tab route fallback is fixed and CI-guarded; exact normalized target URL is mandatory.
-- Added pure `runner-policy.js` with `normalizeUrl()` and `shouldArm(target,currentUrl)`: only status=running + exact normalized URL; interval=true; response=true only when `sendImmediately!==false`; paused/completed/cross-URL=false.
-- Added deterministic `test-runner-policy.mjs` vectors for interval, response immediate/non-immediate, paused, completed, cross-URL, and query/hash normalization.
-- CI now syntax-checks and runs runner policy tests. Route State Contract run 35971065641 passed all 24 functional/check steps.
-- Manifest now loads `runner-policy.js` before `content.js`; policy is ready to wire but content runtime has NOT yet been changed to use it. Do not falsely mark interval/reload fixed yet.
+- Wired `ParrotRunnerPolicy.shouldArm(target, location.href)` into content startup after durable ambiguity recovery and into `chrome.storage.onChanged` target reconciliation.
+- Automatic arming is exact-normalized-URL only; interval running targets auto-arm; response targets auto-arm only when `sendImmediately!==false`.
+- Deleted/non-running targets prune active runner tokens.
+- Added `runnerModes` fencing plus token-aware `finally` cleanup so response↔interval mode transitions invalidate the old runner without allowing stale cleanup to delete its replacement.
+- Existing `runners.has()` remains the duplicate fence when explicit `PARROT_START` and storage-driven arming overlap.
+- Route State Contract run 35974714130 on commit 8e647da7e86e5b83450edea16e736242114e453d passed syntax, route/signal/prompt/repeat/runner tests, contract validation, v0.8.7 integration guard, and rebuildability.
+- Extended integration guard to require runner mode-transition fencing at commit 6c8570b74d7322655c7f81031d521232e9512cbf; exact-head CI was queued during handoff and must be checked before treating that guard commit as verified.
+- Refreshed `docs/DEVELOPMENT_CHECKPOINT.md` to current v0.8.7 reconstruction state and open release gates.
 
 NEXT_ACTION=
-1. In content runtime, add one `armMatchingRunningTargets()` path using `ParrotRunnerPolicy.shouldArm(target, location.href)` and existing `startRunner()` fence.
-2. Call it once at content startup after durable ambiguity recovery and on relevant `chrome.storage.onChanged` transitions. Existing `runners.has` must prevent explicit PARROT_START + storage arming duplicates.
-3. Ensure non-running/deleted/completed targets first remove runner tokens and are never re-armed. Response `sendImmediately=false` must remain unarmed by automatic policy.
-4. Decide whether popup should explicitly send `PARROT_START` for interval mode after generic storage arming exists; prefer one canonical arming path and keep explicit message only if it materially improves deterministic startup without duplicate semantics.
-5. Extend integration/lifecycle contract to require runner-policy load-before-content and actual content usage, then run full CI and inspect every step.
-6. Keep final release blocked until `docs/LIVE_SMOKE_CHECKLIST.md` executes on a real browser surface.
+1. Check exact-head CI for `6c8570b74d7322655c7f81031d521232e9512cbf` and inspect all steps; fix any failure rather than weakening the guard.
+2. Add deterministic lifecycle coverage for storage-driven startup/reload recovery, duplicate explicit `PARROT_START` + storage arming, running mode transition, deleted/non-running pruning, cross-URL refusal, and response `sendImmediately=false` automatic refusal. Prefer a small testable lifecycle primitive/harness over a large DOM mock.
+3. Audit popup `startTarget()` ordering against Chrome storage `onChanged` + `tabs.sendMessage()`. Preserve intended initial delay semantics and ensure only one effective runner. If explicit `PARROT_START` is redundant for interval mode, simplify only with evidence; do not introduce a second lifecycle authority.
+4. Run full CI after changes and inspect exact-head results.
+5. If static/deterministic gates remain green, build or prepare the repository-only v0.8.7 candidate ZIP path and verify ZIP contents/rebuildability. Do not call it release-ready without real-browser smoke.
+6. Keep `docs/LIVE_SMOKE_CHECKLIST.md` as the real Chromium + ChatGPT release gate; static CI is not browser proof.
 
 DONE_CRITERIA=
-- interval Start creates exactly one runner.
-- running exact-URL target recovers after content reload.
-- cross-URL/non-running/completed/sendImmediately=false targets do not auto-arm.
-- duplicate arming is fenced.
-- full static CI/integration/rebuildability is green.
-- next baton remains ~14 useful minutes unless genuinely externally gated.
+- exact-head CI for the current lifecycle implementation is green.
+- startup/storage/manual-start and mode-transition race semantics have deterministic regression evidence.
+- initial delay / `sendImmediately=false` behavior is not accidentally changed by storage auto-arm.
+- repository-only candidate build path is verified or left with an exact blocker.
+- real-browser smoke remains explicitly open until actually executed.
 
 DO_NOT_REPEAT=
-- claim runner-policy existence alone fixes runtime (it is not wired yet)
+- claim runner-policy existence alone fixes runtime
 - wrong-tab fallback
-- popup diagnosis/repair
+- popup clamp diagnosis/repair
 - static-CI-as-browser-proof claims
 - semantic chat parsing
+- copying v0.8.0 background/content/dashboard and labeling them v0.8.6
 
 BLOCKER=
 Real ChatGPT browser smoke requires an actual browser/extension execution surface and remains a release gate. Exact later v0.8.6 background/content/dashboard bytes remain unavailable, so reconstruction remains deliberately v0.8.7.
