@@ -27,6 +27,7 @@ jobs:
       - run: node --check extension/background.js
       - run: node --check extension/content.js
       - run: node --check extension/dashboard.js
+      - run: node --check scripts/verify-live-smoke-result.mjs
       - run: node scripts/test-route-state.mjs
       - run: node scripts/test-route-queue.mjs
       - run: node scripts/test-signal-protocol.mjs
@@ -39,6 +40,7 @@ jobs:
       - run: node scripts/test-popup-ux-contract.mjs
       - run: node scripts/test-chatgpt-adapter-structure.mjs
       - run: node scripts/test-cooldown-storage-contract.mjs
+      - run: node scripts/test-live-smoke-verifier.mjs
       - run: node scripts/validate-contracts.mjs
       - run: node scripts/validate-v087-integration.mjs
       - run: node scripts/verify-repo.mjs
