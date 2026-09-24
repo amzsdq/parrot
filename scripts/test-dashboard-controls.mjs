@@ -1,10 +1,6 @@
-import assert from'node:assert/strict';import{readFileSync}from'node:fs';const s=readFileSync(new URL('../extension/dashboard.js',import.meta.url),'utf8');
-assert.match(s,/workersBody[^\n]*addEventListener\(['"]click['"],workerAction\)/,'worker table delegates actions');
-assert.match(s,/data-worker-action/,'worker actions are explicit structural controls');
-assert.match(s,/workerAction[\s\S]*action===['"]start['"][\s\S]*chrome\.tabs\.sendMessage\(w\.tab\.id,\{type:['"]PARROT_START['"]/,'dashboard starts matching tab through PARROT_START without activation');
-assert.match(s,/action===['"]stop['"][\s\S]*status:['"]stopped['"]/,'dashboard stop persists non-running state');
-assert.match(s,/normalizeUrl\(c\.url\)===normalizeUrl\(target\.url\)/,'dashboard matches tabs by normalized exact URL');
-assert.doesNotMatch(s,/tabs\s*\[\s*0\s*\]/,'dashboard has no first-tab fallback');
-assert.match(s,/runId=crypto\.randomUUID\(\)/,'dashboard start creates fresh run identity');
-assert.match(s,/completionSignalUrl:`\$\{COMPLETE_PREFIX\}\$\{encodeURIComponent\(runId\)\}`/,'dashboard start binds completion URL to fresh run');
-console.log('PASS: dashboard direct start/stop controls remain exact-target and structurally fenced');
+import assert from'node:assert/strict';import{readFileSync}from'node:fs';const s=readFileSync(new URL('../extension/dashboard.js',import.meta.url),'utf8'),h=readFileSync(new URL('../extension/dashboard.html',import.meta.url),'utf8');
+assert.match(s,/workersBody[^\n]*addEventListener\(['"]click['"],workerAction\)/,'worker table delegates actions');assert.match(s,/data-worker-action/,'worker actions are explicit structural controls');
+assert.match(s,/workerAction[\s\S]*action===['"]start['"][\s\S]*chrome\.tabs\.sendMessage\(w\.tab\.id,\{type:['"]PARROT_START['"]/,'dashboard starts matching tab through PARROT_START without activation');assert.match(s,/action===['"]stop['"][\s\S]*status:['"]stopped['"]/,'dashboard stop persists non-running state');
+assert.match(s,/normalizeUrl\(c\.url\)===normalizeUrl\(target\.url\)/,'dashboard matches tabs by normalized exact URL');assert.doesNotMatch(s,/tabs\s*\[\s*0\s*\]/,'dashboard has no first-tab fallback');assert.match(s,/runId=crypto\.randomUUID\(\)/,'dashboard start creates fresh run identity');assert.match(s,/completionSignalUrl:`\$\{COMPLETE_PREFIX\}\$\{encodeURIComponent\(runId\)\}`/,'dashboard start binds completion URL to fresh run');
+assert.match(s,/ParrotDashboardModel/,'dashboard runtime consumes tested fleet model');assert.match(s,/DM\.hasCooldown/,'cooldown is surfaced structurally');assert.match(s,/\[['"]Retry['"],['"]PARROT_ROUTE_RETRY['"]\],\[['"]Resolve['"],['"]PARROT_ROUTE_RESOLVE['"]\]/,'ambiguous route exposes explicit Retry and Resolve actions');assert.match(h,/대시보드를 떠나지 않고 열린 ChatGPT Worker를 시작·중지·열기/,'dashboard explains direct worker controls');
+console.log('PASS: dashboard exact-target controls, structural attention, and ambiguity actions');
