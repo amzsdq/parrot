@@ -29,6 +29,7 @@ jobs:
       - run: node scripts/test-prompt-compose.mjs
       - run: node scripts/test-repeat-policy.mjs
       - run: node scripts/test-chatgpt-adapter-structure.mjs
+      - run: node scripts/test-cooldown-storage-contract.mjs
       - run: node scripts/validate-contracts.mjs
       - run: node scripts/validate-v087-integration.mjs
       - run: node scripts/verify-repo.mjs
