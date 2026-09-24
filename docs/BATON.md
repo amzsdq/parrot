@@ -17,33 +17,37 @@ Integrate the newly added deterministic v0.8.7 route-state primitives into produ
 
 COMPLETED_PREVIOUS=
 - Re-materialized Library `parrot_extension_v0.8.0.zip` and re-verified recovered popup.js: 21,960 bytes, `node --check` passes, Git blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`.
-- Direct `update_file` cannot consume a local file path; Git tree reuse of SHA 04b3... failed 422 because the local Git blob is not yet an object in this GitHub repository. Do not hand-copy or guess the authoritative file merely to force the write.
-- Added `extension/route-state.js` with strong receipt classification, ambiguity fencing/reconciliation, manual retry/resolve, active-preserving terminal pruning, and structural discarded/frozen classification.
-- Added `scripts/test-route-state.mjs` covering the deterministic vectors in `tests/route-state-contract.json`, including Chrome frozen-property-unsupported semantics.
+- Direct GitHub contents write has no local-file parameter; attempted Git tree reuse of SHA 04b3... failed 422 because the local Git blob is not yet a GitHub repository object. Do not hand-copy/guess bytes merely to force certification.
+- Added `extension/route-state.js`: strong receipt classification, ambiguity fencing/reconciliation, manual retry/resolve, active-preserving terminal pruning, discarded/frozen structural classification.
+- Added `scripts/test-route-state.mjs` against `tests/route-state-contract.json`.
+- Executed the same current route-state implementation in local Node/vm: 11 focused assertions passed (count receipt, generation receipt, composer-only ambiguity, ambiguity fence, manual retry, manual resolve, discarded, frozen, frozen-unsupported, mixed pruning, active-over-cap). Fresh-main script execution remains a separate gate because this runtime cannot network-clone GitHub.
+- Inspected recovered v0.8.0 production hot paths: background periodic processing redispatches every non-delivered record; content `waitForDispatchReceipt` incorrectly treats composer-cleared/changed as delivery. These are the exact first integration seams for v0.8.7.
 
 NEXT_ACTION=
-1. Run `node scripts/test-route-state.mjs` against fresh main through an available executable checkout/runtime; fix any deterministic failure before wiring production.
-2. Wire `route-state.js` into the appropriate runtime surfaces without duplicating state-machine logic. Preserve ChatGPT-first and no semantic chat-content inspection.
-3. First production slice should make periodic dispatch accept only `pending`, make ambiguity reconciliation state-only, and preserve manual retry/resolve boundaries. Do not attempt all dashboard UX in one uncontrolled change.
-4. Add/extend deterministic tests around the actual wired production functions, not only the standalone model.
-5. For exact popup.js, prefer a byte-preserving GitHub write path that can accept the materialized file/blob. If unavailable, keep the exact local artifact/hash evidence and do not falsely mark repo popup exact.
-6. Run repository syntax/rebuildability gates for files changed and hand off another ~14-minute package.
+1. Wire `route-state.js` into reconstructed production runtime. Recovered v0.8.0 source is reference-only; reconstructed files must be v0.8.7, never claimed byte-exact v0.8.6.
+2. Background first slice: periodic dispatch only when `ParrotRouteState.canAutoDispatch(item)`; add ambiguity reconciliation that changes state only; terminal pruning includes delivered+resolved and retains all active records.
+3. Content first slice: capture `beforeUserCount`, click once, and accept delivery only on user-count increase or generation start. Composer clear/change alone => durable ambiguity receipt; locally fence queue id before transient notification.
+4. Add actual production-path regression tests for those seams, then dashboard Retry/Resolve controls and structural frozen/discarded state.
+5. For exact popup.js, continue seeking a byte-preserving GitHub write bridge from the materialized Library file; until it exists, retain the exact hash evidence without false certification.
+6. Repair handoff-log integrity: append the full PARROT-BATON-004 snapshot to `docs/DEVELOPMENT_LOG.md`. The current connector exposes full-file replacement rather than append, so this turn updated BATON safely but did not risk truncating the existing append-only history.
+7. Run repository syntax/rebuildability gates and hand off another ~14-minute package.
 
 DONE_CRITERIA=
-- Standalone route-state contract runner has actual execution evidence, not merely source existence.
-- At least one production runtime path uses the shared route-state primitive with deterministic regression evidence, OR a precise integration blocker is recorded.
+- At least one production runtime path uses shared route-state semantics with deterministic regression evidence, OR a precise integration blocker is recorded.
 - Ambiguous records cannot enter automatic dispatch through the integrated slice.
+- Strong receipt no longer accepts composer clearing/changing alone.
 - No reconstructed v0.8.0 runtime is mislabeled byte-exact v0.8.6.
-- Exact popup evidence remains preserved until a byte-preserving connector write succeeds.
+- DEVELOPMENT_LOG mirror is restored without history loss.
+- Exact popup evidence remains preserved until byte-preserving write succeeds.
 
 DO_NOT_REPEAT=
 - broad Library search for v0.8.6
-- re-investigate popup.js 53-byte cause; authoritative v0.8.0 popup bytes already match target blob
+- re-investigate popup.js 53-byte cause
 - manifest.json/chatgpt-adapter.js/dashboard.html/dashboard.css/popup.css/popup.html exact migrations
 - background.js nine-line historical stub
 
 BLOCKER=
-Exact v0.8.6 background.js/content.js/dashboard.js bytes remain unavailable. Exact popup.js bytes ARE available locally, but the current GitHub text connector exposes string replacement rather than a local-file parameter; do not compromise byte certainty. Continue v0.8.7 reconstruction for the missing runtime trio.
+Exact v0.8.6 background.js/content.js/dashboard.js bytes remain unavailable. Exact popup.js bytes are available locally but current GitHub write connector does not accept a local file reference. Network git clone is unavailable in the execution container. Continue deliberate v0.8.7 reconstruction from recovered v0.8.0 + verified contracts.
 
 SCHEDULER_RULE=
 Preferred/default NEXT_WAKE_DELAY_MINUTES is 14. Shorter is exceptional and requires a concrete unavoidable SHORT_PACKAGE_REASON.
