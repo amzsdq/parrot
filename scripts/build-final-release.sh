@@ -6,6 +6,20 @@ VERSION=$(node -e "const m=require('./extension/manifest.json');process.stdout.w
 OUT=${3:-parrot-v${VERSION}.zip}
 NOTES=${4:-docs/RELEASE_NOTES_DRAFT.md}
 RELEASE_SHA=$(git rev-parse HEAD)
+PROVENANCE="$OUT.provenance.txt"
+
+case "$OUT" in
+  *.zip) ;;
+  *) echo "FAIL: release output must end in .zip" >&2; exit 1 ;;
+esac
+
+# Fail before touching release outputs when the working tree contains product edits.
+# M6 validates committed candidate bytes, not uncommitted extension changes.
+if ! git diff --quiet -- extension || ! git diff --cached --quiet -- extension || [ -n "$(git ls-files --others --exclude-standard -- extension)" ]; then
+  echo "FAIL: working tree contains uncommitted/untracked extension changes; commit a new candidate and repeat M6" >&2
+  git status --short -- extension >&2
+  exit 1
+fi
 
 echo "Verifying live browser evidence for candidate $CANDIDATE_SHA"
 GATE_OUTPUT=$(node scripts/verify-live-smoke-result.mjs "$RESULT" "$CANDIDATE_SHA")
@@ -28,11 +42,11 @@ if grep -q 'LIMITATION: S9/S10 NOT_OBSERVED' <<<"$GATE_OUTPUT"; then
   echo 'PASS: NOT_OBSERVED live limitations are represented in release notes.'
 fi
 node scripts/verify-repo.mjs
-rm -f "$OUT" "$OUT.sha256" "$OUT.files.txt"
+rm -f "$OUT" "$OUT.sha256" "$OUT.files.txt" "$PROVENANCE"
 (cd extension && zip -X -r "../$OUT" . -x '*.DS_Store')
 unzip -t "$OUT"
 unzip -Z1 "$OUT" | LC_ALL=C sort > "$OUT.files.txt"
 sha256sum "$OUT" | tee "$OUT.sha256"
 unzip -p "$OUT" manifest.json | grep -F "\"version\": \"$VERSION\""
-printf 'candidate_sha=%s\nrelease_repo_sha=%s\n' "$CANDIDATE_SHA" "$RELEASE_SHA" > "$OUT.provenance.txt"
+printf 'candidate_sha=%s\nrelease_repo_sha=%s\n' "$CANDIDATE_SHA" "$RELEASE_SHA" > "$PROVENANCE"
 echo "PASS: final release artifact built only after candidate-bound live evidence, candidate-tree identity, and limitation gates."
