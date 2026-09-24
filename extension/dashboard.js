@@ -26,18 +26,12 @@ async function refresh() {
   const tabs = await chrome.tabs.query({ url: 'https://chatgpt.com/*' });
   workers = targets.map((target) => {
     const tab = tabs.find((candidate) => candidate.url === target.url);
-    const structure = classifyTab(tab);
+    const structure = ParrotRouteState.classifyTabStructure(tab);
     return { target, tab, structure };
   });
   renderStats(); renderWorkers(); renderRoutes(); renderEvents(data[EVENTS_KEY]);
 }
 
-function classifyTab(tab) {
-  if (!tab) return { structuralState: 'not_open', frozenSupport: 'unknown' };
-  if (tab.discarded === true) return { structuralState: 'discarded', frozenSupport: 'frozen' in tab ? 'supported' : 'unknown' };
-  if (tab.frozen === true) return { structuralState: 'frozen', frozenSupport: 'supported' };
-  return { structuralState: 'open', frozenSupport: 'frozen' in tab ? 'supported' : 'unknown' };
-}
 function isAttention(worker) { return ['discarded','frozen'].includes(worker.structure.structuralState) || Boolean(worker.target.lastError); }
 function renderStats() {
   $('statTargets').textContent = workers.length;
