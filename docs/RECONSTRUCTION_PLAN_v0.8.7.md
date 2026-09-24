@@ -82,12 +82,12 @@ Hard rule: `ambiguous` is not a retry state. Periodic queue processing must skip
    - ambiguous: Retry + Resolve;
    - pending: no blind retry control unless explicitly designed;
    - delivered/resolved: terminal display.
-4. Worker state distinguishes closed/not-open from `discarded` / `frozen` where Chrome exposes those structural tab properties.
+4. Worker state distinguishes closed/not-open from `discarded` / `frozen` using structural `chrome.tabs.Tab` properties. Chrome documents `discarded` from Chrome 54 and `frozen` from Chrome 132; treat `frozen === undefined` as unsupported/unknown on older Chrome rather than false evidence that the tab is definitely not frozen. Chrome also documents that a frozen tab cannot execute tasks/event handlers/timers, while messages to it are queued until unfreeze, so dashboard status must not misclassify a frozen tab as ordinary content-script failure.
 5. Dashboard actions address the matching target tab directly and must not depend on dashboard being the active tab.
 
 ## Regression gates before release
 
-`tests/route-state-contract.json` now records the deterministic contract vectors. It is specification evidence only until production code is wired to a runner; do not report it as passing production tests merely because the JSON exists.
+`tests/route-state-contract.json` records deterministic contract vectors. It is specification evidence only until production code is wired to a runner; do not report it as passing production tests merely because the JSON exists.
 
 Required deterministic tests:
 1. pending -> delivered when user-message count increases.
@@ -101,8 +101,14 @@ Required deterministic tests:
 9. pruning with 1 pending + 250 delivered + 250 resolved retains 300 total, keeps active, keeps newest terminal.
 10. 320 active records retain all 320.
 11. dashboard pagination/search/filter and ambiguity controls operate on the intended queue item.
-12. `node scripts/verify-repo.mjs` passes.
-13. manifest parse/version, ZIP integrity, and real ChatGPT selector/receipt smoke test pass.
+12. discarded/frozen structural classification handles `frozen === undefined` as unsupported/unknown and does not equate a frozen tab with ordinary unreachable content script.
+13. `node scripts/verify-repo.mjs` passes.
+14. manifest parse/version, ZIP integrity, and real ChatGPT selector/receipt smoke test pass.
+
+## References
+
+- Chrome Tabs API: https://developer.chrome.com/docs/extensions/reference/api/tabs
+- Chrome extension changes: https://developer.chrome.com/docs/extensions/whats-new
 
 ## Version rule
 
