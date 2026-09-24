@@ -5,13 +5,14 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const testsDir = join(root, 'tests');
 const files = readdirSync(testsDir).filter((name) => name.endsWith('-contract.json')).sort();
+const SUPPORTED_SCHEMAS = new Set([1, 2]);
 
 if (!files.length) throw new Error('no *-contract.json files found');
 
 let total = 0;
 for (const file of files) {
   const doc = JSON.parse(readFileSync(join(testsDir, file), 'utf8'));
-  if (doc.schema !== 1) throw new Error(`${file}: unsupported contract schema: ${doc.schema}`);
+  if (!SUPPORTED_SCHEMAS.has(doc.schema)) throw new Error(`${file}: unsupported contract schema: ${doc.schema}`);
   if (!Array.isArray(doc.cases) || doc.cases.length === 0) throw new Error(`${file}: contract cases missing`);
 
   const ids = new Set();
@@ -23,7 +24,7 @@ for (const file of files) {
     if (!Object.prototype.hasOwnProperty.call(item, 'expected')) throw new Error(`${file}: case ${item.id} has no expected value`);
   }
   total += doc.cases.length;
-  console.log(`PASS: ${file}: ${doc.cases.length} vectors`);
+  console.log(`PASS: ${file}: schema ${doc.schema}, ${doc.cases.length} vectors`);
 }
 
 console.log(`PASS: ${total} contract vectors across ${files.length} files.`);
