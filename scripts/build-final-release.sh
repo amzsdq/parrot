@@ -14,14 +14,21 @@ cleanup_failed_release() {
 }
 trap cleanup_failed_release ERR
 
+TOOLING_SNAPSHOT=$(mktemp -d)
+RESULT_SNAPSHOT=
+CANDIDATE_SNAPSHOT=
+cleanup_snapshots() {
+  [[ -z "$RESULT_SNAPSHOT" ]] || rm -f -- "$RESULT_SNAPSHOT"
+  [[ -z "$CANDIDATE_SNAPSHOT" ]] || rm -rf -- "$CANDIDATE_SNAPSHOT"
+  rm -rf -- "$TOOLING_SNAPSHOT"
+}
+trap cleanup_snapshots EXIT
+
 # Freeze committed release tooling and notes before trusting any downstream
 # helper. The frozen verifier then proves the mutable working tree matched the
 # same RELEASE_SHA at the freeze boundary. Every later helper executes only
 # from this snapshot, so post-verification worktree edits cannot change the
 # release logic or notes consumed by limitation checks.
-TOOLING_SNAPSHOT=$(mktemp -d)
-cleanup_tooling() { rm -rf -- "$TOOLING_SNAPSHOT"; }
-trap cleanup_tooling EXIT
 if [[ ${PARROT_TEST_USE_WORKTREE_TOOLING:-0} == 1 ]]; then
   TOOL_ROOT=.
 else
@@ -33,15 +40,10 @@ run_tool() { bash "$TOOL_ROOT/scripts/$1" "${@:2}"; }
 run_tool verify-release-worktree.sh "$NOTES"
 run_tool verify-release-preflight.sh "$CANDIDATE_SHA"
 
-# Freeze both mutable inputs before downstream gates. Live evidence is copied
-# once; release product bytes are materialized from the exact candidate commit
-# rather than re-reading the working tree after preflight.
 [[ -f "$RESULT" ]] || { echo "FAIL: live result missing: $RESULT" >&2; exit 1; }
 RESULT_SNAPSHOT=$(mktemp)
 cp -- "$RESULT" "$RESULT_SNAPSHOT"
 CANDIDATE_SNAPSHOT=$(mktemp -d)
-cleanup_snapshots() { rm -f -- "$RESULT_SNAPSHOT"; rm -rf -- "$CANDIDATE_SNAPSHOT"; }
-trap cleanup_snapshots EXIT
 run_tool materialize-release-candidate.sh "$CANDIDATE_SHA" "$CANDIDATE_SNAPSHOT/tree"
 VERSION=$(node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(m.version)" "$CANDIDATE_SNAPSHOT/tree/extension/manifest.json")
 
