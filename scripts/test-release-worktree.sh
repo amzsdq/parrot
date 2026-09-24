@@ -26,6 +26,15 @@ if bash "$GATE" "$NOTES" >/dev/null 2>&1; then
 fi
 git checkout -q -- "$NOTES"
 
+# A caller-selected untracked notes file is not represented by RELEASE_SHA and
+# must never be accepted as release metadata.
+printf 'local-only release notes\n' > docs/LOCAL_RELEASE_NOTES.md
+if bash "$GATE" docs/LOCAL_RELEASE_NOTES.md >/dev/null 2>&1; then
+  echo 'FAIL: untracked release notes were accepted' >&2
+  exit 1
+fi
+rm docs/LOCAL_RELEASE_NOTES.md
+
 # Live evidence is deliberately external/uncommitted input and is bound by its
 # content hash in provenance; this gate must not accidentally forbid it.
 printf 'external live evidence\n' > docs/LIVE_SMOKE_RESULT.md
@@ -35,4 +44,4 @@ bash "$GATE" "$NOTES" >/dev/null
 printf '\n' >> extension/manifest.json
 bash "$GATE" "$NOTES" >/dev/null
 
-echo 'PASS: release worktree gate rejects dirty tooling/notes without conflating external evidence or candidate-tree preflight.'
+echo 'PASS: release worktree gate rejects dirty tooling/notes and untracked notes without conflating external evidence or candidate-tree preflight.'
