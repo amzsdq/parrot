@@ -22,7 +22,7 @@ EOF
 }
 
 install_success_stubs() {
-  stub scripts/prepare-release-output.sh cleanup 'rm -f -- "$1" "$1.sha256" "$1.files.txt" "$1.provenance.txt"'
+  stub scripts/prepare-release-output.sh cleanup 'rm -f -- "$1.ready" "$1" "$1.sha256" "$1.files.txt" "$1.provenance.txt"'
   stub scripts/verify-release-worktree.sh worktree
   stub scripts/verify-release-preflight.sh preflight
   stub scripts/verify-candidate-live-evidence.sh live-evidence "echo 'PASS: fake candidate-bound evidence'"
@@ -30,6 +30,7 @@ install_success_stubs() {
   stub scripts/verify-release-repository.sh repository
   stub scripts/build-release-archive.sh archive 'touch "$1" "$1.sha256" "$1.files.txt"'
   stub scripts/write-release-provenance.sh provenance 'touch "$1.provenance.txt"'
+  stub scripts/publish-release-ready.sh publish 'touch "$1.ready"'
 }
 
 install_success_stubs
@@ -39,11 +40,12 @@ printf 'verified evidence bytes\n' > "$RESULT"
 bash scripts/build-final-release.sh "$RESULT" HEAD "$OUT" docs/RELEASE_NOTES_DRAFT.md >/dev/null
 
 mapfile -t CALLS < "$LOG"
-EXPECTED=(cleanup worktree preflight live-evidence limitations repository archive provenance)
+EXPECTED=(cleanup worktree preflight live-evidence limitations repository archive provenance publish)
 [[ ${#CALLS[@]} -eq ${#EXPECTED[@]} ]] || { echo "FAIL: expected ${#EXPECTED[@]} delegated calls, got ${#CALLS[@]}" >&2; printf '%s\n' "${CALLS[@]}" >&2; exit 1; }
 for i in "${!EXPECTED[@]}"; do
   [[ ${CALLS[$i]%%|*} == "${EXPECTED[$i]}" ]] || { echo "FAIL: call $i expected ${EXPECTED[$i]}, got ${CALLS[$i]}" >&2; exit 1; }
 done
+[[ -f "$OUT.ready" ]] || { echo 'FAIL: successful builder did not publish readiness last' >&2; exit 1; }
 
 grep -Fq 'worktree|docs/RELEASE_NOTES_DRAFT.md' "$LOG" || { echo 'FAIL: release notes not passed to worktree gate' >&2; exit 1; }
 grep -Fq 'preflight|HEAD' "$LOG" || { echo 'FAIL: candidate SHA not passed to preflight' >&2; exit 1; }
@@ -52,10 +54,7 @@ PROV_RESULT_ARG=$(grep '^provenance|' "$LOG" | awk -F'|' '{print $2}' | awk '{pr
 [[ -n "$LIVE_ARG" && "$LIVE_ARG" == "$PROV_RESULT_ARG" ]] || { echo 'FAIL: verification and provenance did not receive the same live-result snapshot' >&2; cat "$LOG" >&2; exit 1; }
 [[ "$LIVE_ARG" != "$RESULT" ]] || { echo 'FAIL: builder passed mutable caller live-result path directly to release gates' >&2; exit 1; }
 grep -Fq "archive|$OUT" "$LOG" || { echo 'FAIL: archive output path not propagated' >&2; exit 1; }
-grep -Fq 'provenance|' "$LOG" || { echo 'FAIL: provenance writer not reached' >&2; exit 1; }
 
-# Mutating the caller-owned evidence during verification must not change the
-# bytes later bound into provenance: both gates consume the frozen snapshot.
 install_success_stubs
 : > "$LOG"
 printf 'original evidence\n' > "$RESULT"
@@ -72,7 +71,7 @@ assert_blocked_at() {
   stub "$script" "$gate" "exit $code"
   local blocked_out="$TMP/blocked-$gate.zip"
   if [[ $stale == yes ]]; then
-    touch "$blocked_out" "$blocked_out.sha256" "$blocked_out.files.txt" "$blocked_out.provenance.txt"
+    touch "$blocked_out.ready" "$blocked_out" "$blocked_out.sha256" "$blocked_out.files.txt" "$blocked_out.provenance.txt"
   fi
   set +e
   bash scripts/build-final-release.sh "$RESULT" HEAD "$blocked_out" docs/RELEASE_NOTES_DRAFT.md >/dev/null 2>&1
@@ -82,13 +81,12 @@ assert_blocked_at() {
   [[ $(wc -l < "$LOG") -eq $expected_calls ]] || { echo "FAIL: builder did not stop at $gate" >&2; cat "$LOG" >&2; exit 1; }
   [[ $(tail -n1 "$LOG" | cut -d'|' -f1) == "$gate" ]] || { echo "FAIL: expected final call $gate" >&2; cat "$LOG" >&2; exit 1; }
   if [[ $stale == yes && $gate != cleanup ]]; then
-    for path in "$blocked_out" "$blocked_out.sha256" "$blocked_out.files.txt" "$blocked_out.provenance.txt"; do
-      [[ ! -e "$path" ]] || { echo "FAIL: failed $gate left stale/partial release artifact: $path" >&2; exit 1; }
+    for path in "$blocked_out.ready" "$blocked_out" "$blocked_out.sha256" "$blocked_out.files.txt" "$blocked_out.provenance.txt"; do
+      [[ ! -e "$path" ]] || { echo "FAIL: failed $gate left stale/partial publishable release state: $path" >&2; exit 1; }
     done
   fi
 }
 
-# Cleanup is the first operation; its own artificial failure is only an exit-propagation check.
 assert_blocked_at scripts/prepare-release-output.sh cleanup 26 1 no
 assert_blocked_at scripts/verify-release-worktree.sh worktree 30 2
 assert_blocked_at scripts/verify-release-preflight.sh preflight 23 3
@@ -97,5 +95,6 @@ assert_blocked_at scripts/verify-release-limitations.sh limitations 25 5
 assert_blocked_at scripts/verify-release-repository.sh repository 29 6
 assert_blocked_at scripts/build-release-archive.sh archive 27 7
 assert_blocked_at scripts/write-release-provenance.sh provenance 28 8
+assert_blocked_at scripts/publish-release-ready.sh publish 31 9
 
-echo 'PASS: final release builder freezes live evidence once, invalidates stale output first, gates committed release tooling, delegates in order, propagates failures, and leaves no misleading publishable state.'
+echo 'PASS: final release builder publishes readiness last, invalidates it first, propagates every gate failure, and leaves no misleading publishable state.'
