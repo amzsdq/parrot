@@ -1,4 +1,29 @@
 (() => {
+  const COOLDOWN_SELECTORS = Object.freeze({
+    rate_limit: [
+      '[data-testid="rate-limit-error"]',
+      '[data-testid="rate-limit-toast"]',
+      '[data-error-code="rate_limit"]',
+      '[data-error-code="too_many_requests"]'
+    ],
+    transient: [
+      '[data-testid="network-error"]',
+      '[data-testid="server-error"]',
+      '[data-testid="error-toast"]',
+      '[data-error-code="network_error"]',
+      '[data-error-code="server_error"]',
+      '[role="alert"][data-error-code]'
+    ]
+  });
+
+  function firstMatch(selectors) {
+    for (const selector of selectors) {
+      const node = document.querySelector(selector);
+      if (node) return { node, selector };
+    }
+    return null;
+  }
+
   const adapter = {
     id: 'chatgpt',
     matches() {
@@ -17,6 +42,14 @@
       if (document.querySelector('[data-message-author-role="assistant"][aria-busy="true"]')) return true;
       if (document.querySelector('[data-message-author-role="assistant"] [aria-busy="true"]')) return true;
       return false;
+    },
+    classifyCooldown() {
+      // Structural selectors only. Never inspect assistant/user message prose or node text.
+      const rate = firstMatch(COOLDOWN_SELECTORS.rate_limit);
+      if (rate) return { kind: 'rate_limit', code: rate.node.getAttribute('data-error-code') || 'rate_limit_ui', selector: rate.selector };
+      const transient = firstMatch(COOLDOWN_SELECTORS.transient);
+      if (transient) return { kind: 'transient', code: transient.node.getAttribute('data-error-code') || 'transient_ui', selector: transient.selector };
+      return null;
     },
     getComposer() {
       return (
