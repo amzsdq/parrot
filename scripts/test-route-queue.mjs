@@ -32,8 +32,9 @@ await api.processEligible();
 assert(JSON.stringify(dispatches) === '["p1"]', 'periodic processing dispatches pending only');
 
 dispatches = [];
-const reconciled = await api.reconcileAmbiguity({ queueId: 'p1', ambiguousAt: 3000, reason: 'strong_receipt_timeout' });
+const reconciled = await api.reconcileAmbiguity({ queueId: 'p1', ambiguousAt: 3000, reason: 'strong_receipt_timeout', beforeUserCount: 4, afterUserCount: 4, generationObserved: false, message: 'MUST_NOT_PERSIST' });
 assert(reconciled.ok && reconciled.item.status === 'ambiguous' && dispatches.length === 0, 'ambiguity reconciliation is state-only');
+assert(reconciled.item.ambiguity.message === undefined && reconciled.item.ambiguity.queueId === 'p1', 'ambiguity persistence strips semantic/unapproved fields');
 
 const retry = await api.manualRetry('a1');
 assert(retry.ok && retry.dispatched && dispatches.filter((id) => id === 'a1').length === 1, 'manual retry authorizes exactly one dispatch call');
