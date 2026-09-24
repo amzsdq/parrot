@@ -23,11 +23,7 @@ for (const test of vectors) {
     case 'strong-generation-receipt':
     case 'composer-clear-is-not-proof':
     case 'composer-change-is-not-proof': {
-      const status = model.classifyStrongReceipt({
-        beforeUserCount: test.initial.beforeUserCount,
-        afterUserCount: test.observation.afterUserCount,
-        generating: test.observation.generating
-      });
+      const status = model.classifyStrongReceipt({ beforeUserCount: test.initial.beforeUserCount, afterUserCount: test.observation.afterUserCount, generating: test.observation.generating });
       assert(status === test.expected.status, `${test.id}: ${status}`);
       break;
     }
@@ -40,7 +36,7 @@ for (const test of vectors) {
       break;
     }
     case 'manual-retry': {
-      const next = model.manualRetry(test.initial);
+      const next = model.manualRetry(test.initial, 1000);
       assert(next.status === 'pending' && model.canAutoDispatch(next), `${test.id}: explicit authorization returns to pending`);
       break;
     }
@@ -61,12 +57,18 @@ for (const test of vectors) {
     }
     case 'prune-active-over-cap': {
       const records = Array.from({ length: test.initialCounts.pending }, (_, i) => ({ id: `p${i}`, status: 'pending' }));
-      const kept = model.pruneRouteRecords(records, test.maxRouteRecords);
-      assert(kept.length === test.expectedCounts.total, `${test.id}: active records exceed cap without loss`);
+      assert(model.pruneRouteRecords(records, test.maxRouteRecords).length === test.expectedCounts.total, `${test.id}: active records exceed cap without loss`);
+      break;
+    }
+    case 'tab-discarded':
+    case 'tab-frozen-chrome132-plus':
+    case 'tab-frozen-property-unsupported': {
+      const actual = model.classifyTabStructure(test.tab);
+      assert(Object.entries(test.expected).every(([key, value]) => actual[key] === value), `${test.id}: structural classification`);
       break;
     }
     default:
-      console.log(`SKIP: ${test.id}: belongs to dashboard/tab structural classifier`);
+      console.log(`SKIP: unknown vector ${test.id}`);
   }
 }
 
