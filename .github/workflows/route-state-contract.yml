@@ -28,6 +28,7 @@ jobs:
       - run: node --check extension/content.js
       - run: node --check extension/dashboard.js
       - run: node --check scripts/verify-live-smoke-result.mjs
+      - run: bash -n scripts/build-final-release.sh
       - run: node scripts/test-route-state.mjs
       - run: node scripts/test-route-queue.mjs
       - run: node scripts/test-signal-protocol.mjs
