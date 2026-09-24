@@ -9,7 +9,7 @@ RELEASE_SHA=$(git rev-parse HEAD)
 bash scripts/prepare-release-output.sh "$OUT"
 cleanup_failed_release() {
   local rc=$?
-  rm -f -- "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt"
+  rm -f -- "$OUT.ready" "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt"
   exit "$rc"
 }
 trap cleanup_failed_release ERR
@@ -43,5 +43,8 @@ rm -f "$GATE_OUTPUT_FILE"
 bash scripts/verify-release-repository.sh
 bash scripts/build-release-archive.sh "$OUT" "$VERSION" "$CANDIDATE_SNAPSHOT/tree/extension"
 bash scripts/write-release-provenance.sh "$OUT" "$CANDIDATE_SHA" "$RELEASE_SHA" "$RESULT_SNAPSHOT"
-echo "PASS: final release artifact built only after candidate-bound authenticated live evidence, immutable candidate-tree identity, and limitation gates."
+# Publishability is a separate state committed only after every component is
+# complete and mutually bound. Consumers must require this marker.
+bash scripts/publish-release-ready.sh "$OUT"
+echo "PASS: final release artifact built and marked publish-ready only after candidate-bound authenticated live evidence, immutable candidate-tree identity, and limitation gates."
 trap - ERR
