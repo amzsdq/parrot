@@ -4,47 +4,45 @@ Latest-only continuation pointer; full snapshots are mirrored to `docs/DEVELOPME
 
 CURRENT_VERSION=v0.8.7-reconstruction
 STATUS=CONTINUE
-WORK_PACKAGE_ID=PARROT-BATON-013
-PACKAGE_KIND=FINAL_STATIC_AUDIT_AND_SMOKE_PREP
+WORK_PACKAGE_ID=PARROT-BATON-014
+PACKAGE_KIND=LIFECYCLE_EDGE_AUDIT
 EXPECTED_ACTIVE_MINUTES=14
 NEXT_WAKE_DELAY_MINUTES=14
 SHORT_PACKAGE_REASON=NONE
 WORK_TIME_MARKER_ISSUE=amzsdq/parrot#1
 
 CURRENT_TASK=
-Audit the reconstructed v0.8.7 runtime for remaining static correctness gaps and prepare a precise real-browser smoke checklist/evidence format.
+Audit and test lifecycle edge cases that can still cause duplicate sends, stale state, or unsafe routing before live-browser validation.
 
 COMPLETED_PREVIOUS=
-- Structural cooldown classification, repeat ladders, response/interval gating, popup-schema compatibility, routed-send cooldown backpressure, and popup numeric safety repair are implemented and regression-guarded.
-- Exact repaired `popup.js` blob is `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`.
-- Temporary privileged repair machinery was removed after successful exact repair.
-- Dashboard now treats active cooldown as attention and shows structural cooldown kind/error code plus `cooldownUntil`; it does not inspect chat message DOM/prose for this diagnostic.
-- Cooldown contract test now guards dashboard structural diagnostics in addition to popup clamps, runner storage compatibility, and route backpressure.
-- Route State Contract run 35970752260 passed all 22 functional/check steps after the dashboard runtime change; the subsequent contract-only guard run is expected to verify the same diagnostic seam.
-- README records current cooldown behavior, expanded verification commands, and repaired popup provenance.
-- Real ChatGPT browser smoke remains unverified because this runtime has no interactive unpacked-extension Chrome execution surface.
+- Structural cooldown stack, route cooldown backpressure, popup exact safety repair, and dashboard cooldown diagnostics are implemented and regression-guarded.
+- Dashboard active cooldown is operator-visible as structural kind/error + until timestamp and counts as attention; no chat prose is inspected.
+- Route State Contract run 35970771375 passed all 22 functional/check steps including the dashboard cooldown contract.
+- Added `docs/LIVE_SMOKE_CHECKLIST.md`, a non-fakeable real-browser gate covering unpacked load, exact target resolution, strong receipt, response/interval modes, COMPLETE, WAKE/MESSAGE, ambiguity fencing, non-destructive cooldown observation, and lifecycle/tab states.
+- Smoke evidence rules explicitly forbid substituting static CI/mocks for browser proof and forbid persisting assistant/user prose. Cooldown may be NOT_OBSERVED rather than artificially inducing a rate limit.
+- Final ZIP/release remains blocked on real browser smoke.
 
 NEXT_ACTION=
-1. Audit background/content/dashboard/popup interactions for state-field drift, stale statuses, and lifecycle edge cases: pause/resume, stop, completion, cooldown expiry, target deletion, closed/discarded/frozen tabs, ambiguous route retry/resolve, and runner restart after extension reload.
-2. Add only high-value deterministic tests for concrete gaps found. Prefer behavioral primitives/contracts over brittle source-string checks when feasible.
-3. Review structural cooldown selector candidates and clearly separate observed/stable selectors from speculative fallbacks. Do not claim a selector is live-valid without browser evidence.
-4. Write/refresh a concise real-browser smoke checklist with exact pass/fail evidence required for unpacked load, target resolution, send strong receipt, response mode, interval mode, COMPLETE/WAKE/MESSAGE routing, ambiguity handling, and non-destructive cooldown observation.
-5. Re-run full CI and inspect individual steps. Keep final ZIP/release blocked until browser smoke passes.
-6. If an actual Chrome/extension execution surface becomes available, execute the smoke checklist rather than doing more static speculation.
+1. Audit runner lifecycle on extension/content-script reload: determine whether targets persisted as `running` are automatically resumed or silently stranded; choose and test explicit behavior rather than accidental behavior.
+2. Audit pause/resume/stop/delete transitions against in-memory runner tokens and storage changes. Ensure no runner can continue after stop/delete and define how resume re-arms a runner.
+3. Audit COMPLETE interaction with running runners: completed target must not continue repeating after background marks it completed.
+4. Audit closed/discarded/frozen target tabs and route retry cadence; verify no fallback selects the wrong ChatGPT conversation when exact target URL is absent.
+5. Add behavioral tests/contracts for concrete lifecycle gaps found, then run full CI and inspect each step.
+6. Keep selector live-validity and final release blocked until `docs/LIVE_SMOKE_CHECKLIST.md` is executed on a real unpacked-extension browser surface.
 
 DONE_CRITERIA=
-- remaining static lifecycle gaps are either fixed/tested or explicitly recorded.
-- live-browser smoke checklist is concrete and non-fakeable.
-- full static CI/integration/rebuildability is green.
-- browser smoke is either real and recorded or explicitly remains the release blocker.
+- persisted-running reload behavior is explicit and tested.
+- pause/stop/delete/complete cannot leave a sending runner alive.
+- exact-target routing cannot silently fall back to a different conversation.
+- full static CI/integration/rebuildability remains green.
 - next baton remains ~14 useful minutes unless genuinely externally gated.
 
 DO_NOT_REPEAT=
-- popup 53-byte diagnosis/repair
+- popup diagnosis/repair
 - temporary privileged repair workflow
+- dashboard cooldown work unless a regression is found
 - static-CI-as-browser-proof claims
 - semantic parsing of assistant/user prose
-- scheduler-prearm-as-successor-wake claims
 
 BLOCKER=
 Real ChatGPT browser smoke requires an actual browser/extension execution surface and remains a release gate. Exact later v0.8.6 background/content/dashboard bytes remain unavailable, so reconstruction remains deliberately v0.8.7.
