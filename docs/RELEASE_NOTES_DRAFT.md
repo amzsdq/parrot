@@ -1,6 +1,6 @@
 # Parrot v0.8.7 release notes — DRAFT / NOT RELEASED
 
-**Do not publish as a release until M6 real Chromium + ChatGPT validation is PASS.**
+**Do not publish as a release until M6 real Chromium + authenticated ChatGPT validation is PASS and M7 final artifact evidence is durable.**
 
 ## What v0.8.7 provides
 - ChatGPT-first multi-worker Chrome extension.
@@ -17,7 +17,7 @@
 ## Deliberate limitations
 - Claude, Gemini, and Grok adapters are not implemented in v0.8.7.
 - Parrot does not semantically read assistant/user chat prose.
-- Real browser compatibility is tied to ChatGPT DOM/control structure and must be validated by M6 against the exact release candidate.
+- Real browser compatibility is tied to ChatGPT DOM/control structure and must be validated by M6 against the exact candidate.
 - S9 ambiguity and S10 cooldown may be difficult to reproduce safely/naturally. If either is NOT_OBSERVED, publish that limitation explicitly rather than calling it PASS.
 - Candidate Actions artifacts are temporary evidence bundles, not final release artifacts.
 
@@ -25,15 +25,27 @@
 1. Obtain the exact candidate source/artifact bound to commit `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691` / Actions run `35979821480`.
 2. Extract so `manifest.json` is directly inside the extension directory.
 3. Open Chromium/Chrome extension management, enable Developer mode, choose Load unpacked, and select that directory.
-4. Execute `docs/LIVE_SMOKE_CHECKLIST.md` and record results in `docs/LIVE_SMOKE_RESULT_TEMPLATE.md` without storing chat prose.
-5. Any FAIL reopens the affected earlier milestone; do not proceed to release packaging until retest passes.
+4. Use an authenticated real `https://chatgpt.com/*` profile and execute `docs/LIVE_SMOKE_CHECKLIST.md`.
+5. Record results in `docs/LIVE_SMOKE_RESULT_TEMPLATE.md` without storing chat prose.
+6. Any observed FAIL reopens the affected earlier milestone; do not proceed to release packaging until the affected criterion is fixed and retested.
+
+## M6 acceptance contract
+- Required live cases S1–S8 and S11 must be PASS against the exact M5 candidate SHA.
+- S9 and S10 may be PASS or explicit NOT_OBSERVED only; NOT_OBSERVED remains a published limitation, never an implicit PASS.
+- `scripts/verify-live-smoke-result.mjs` must accept the completed result file bound to the exact candidate SHA.
+- Headless/static/local extension-page evidence cannot substitute for authenticated ChatGPT behavior.
+- A real observed product FAIL reopens the relevant earlier milestone and invalidates release readiness until corrected and retested.
 
 ## Final release checklist — intentionally open
-- [ ] M6 required browser cases PASS against exact candidate SHA.
-- [ ] Any M6 regressions fixed and retested.
+- [ ] Authenticated real Chrome + ChatGPT result file exists and is candidate-SHA-bound.
+- [ ] Required S1–S8 + S11 all PASS.
+- [ ] S9/S10 are PASS or explicit NOT_OBSERVED with limitations carried here.
+- [ ] Machine live-evidence verifier passes.
+- [ ] Any M6 regressions are fixed and retested; no unresolved observed FAIL remains.
 - [ ] M0..M6 all DONE after retest.
-- [ ] Final source SHA frozen.
-- [ ] Final release ZIP rebuilt from frozen source, integrity checked, SHA-256 recorded.
-- [ ] README install/use instructions match final behavior.
+- [ ] Final source SHA is frozen and recorded.
+- [ ] `scripts/build-final-release.sh` is run from that frozen source with the verified live-result file and exact frozen SHA.
+- [ ] Final release ZIP integrity test passes; file list and SHA-256 are recorded.
+- [ ] README install/use instructions match final behavior and artifact identity.
 - [ ] Limitations reflect S9/S10 observation status and deferred provider adapters.
-- [ ] M7 evidence durable; only then PROGRAM_COMPLETE.
+- [ ] M7 evidence is durable and independently reconstructable; only then PROGRAM_COMPLETE.
