@@ -4,48 +4,48 @@ Latest-only continuation pointer; full snapshots are mirrored to `docs/DEVELOPME
 
 CURRENT_VERSION=v0.8.7-reconstruction
 STATUS=CONTINUE
-WORK_PACKAGE_ID=PARROT-BATON-008
-PACKAGE_KIND=CORE_BEHAVIOR_RECONSTRUCTION
+WORK_PACKAGE_ID=PARROT-BATON-009
+PACKAGE_KIND=COOLDOWN_AND_LIVE_VALIDATION
 EXPECTED_ACTIVE_MINUTES=14
 NEXT_WAKE_DELAY_MINUTES=14
 SHORT_PACKAGE_REASON=NONE
 WORK_TIME_MARKER_ISSUE=amzsdq/parrot#1
 
 CURRENT_TASK=
-Wire tested prompt/repeat policy primitives into runtime, then close interval/cooldown/dashboard gaps.
+Finish structural cooldown integration and prepare/execute the highest-value real ChatGPT smoke validation without weakening semantic-content boundaries.
 
 COMPLETED_PREVIOUS=
-- Structural href-only COMPLETE/WAKE/MESSAGE discovery and durable signalId-deduped route/event creation are implemented; no assistant-prose semantic monitoring.
-- `signal-protocol.js` is canonical in background and parser/template vectors pass CI.
-- Response-mode runner, strong user-count/generation receipt, ambiguity outbox-before-notify, and pending-only queue path are present.
-- `prompt-compose.js` + `test-prompt-compose.mjs` define/test once-first-send onboarding directory/URL patterns and exact completion instruction composition. CI run 35963240023 passed all gates including prompt vectors.
-- `repeat-policy.js` + `test-repeat-policy.mjs` define max-repeat/runtime stop rules, interval due calculation, rate-limit cooldown 10→20→40→60 minutes, and transient cooldown 2→5→10→20 minutes. CI run 35963331882 passed syntax, all policy vectors, contracts, integration guard, and rebuildability.
-- Gap audit marks signal discovery closed and prompt composition staged-but-not-wired.
-- popup.js remains safely at restored blob `b2df626c...`; known four-clamp exact repair remains open and requires byte-safe editing.
+- `prompt-compose.js` and `repeat-policy.js` are now loaded before `content.js` by the manifest.
+- Response-mode sends now call `ParrotPromptCompose.compose(target, allTargets, {firstSend: sentCount===0})`, so onboarding is first-send-only while completion instruction remains canonical.
+- Interval mode is reconstructed with one runner per target, duplicate runner fencing, `ParrotRepeatPolicy.intervalDue`, and shared max-repeat/runtime stop policy.
+- Dashboard now loads `route-state.js` and uses canonical `ParrotRouteState.classifyTabStructure(tab)` rather than maintaining a second tab-state classifier.
+- Integration guard now asserts prompt/repeat manifest ordering and runtime seams. Initial guard change exposed an obsolete response-only textual assertion; corrected guard then passed all syntax/unit/contract/integration/rebuildability steps in Actions run 35968690544.
+- No final ZIP/release claim has been made; real browser smoke remains a release gate.
 
 NEXT_ACTION=
-1. Load `prompt-compose.js` before content and replace raw response `target.prompt` send with `ParrotPromptCompose.compose(target, allTargets, {firstSend: sentCount===0})`; integration-guard the popup→composer→content seam.
-2. Load/use `repeat-policy.js` in runtime. Reconstruct interval mode with one runner per target and duplicate fencing; respect intervalMin/maxRepeats/runtime/status.
-3. Detect cooldown only from structural error UI surfaces (dialog/alert/toast), classify rate-limit vs transient, and apply the tested ladders. Never inspect assistant prose.
-4. Converge dashboard tab classification onto canonical route-state primitive.
-5. Add deterministic integration guards for the newly wired seams and keep exact-head CI green.
-6. Update gap audit only when gaps actually close. Do not build/release final ZIP until real ChatGPT browser smoke tests validate send/receipt, signal discovery, cross-tab routing, ambiguity, service-worker lifecycle, both repeat modes, cooldown, and dashboard actions.
+1. Add structural-only cooldown detection to `chatgpt-adapter.js`: inspect error UI surfaces such as dialog/alert/toast structure/labels, never assistant message prose. Return a narrow classification (`rate_limit`, `transient`, or none) with no captured chat text.
+2. Wire content runners to `ParrotRepeatPolicy.cooldownMinutes`; persist only cooldown kind/attempt/until/error code. Rate-limit ladder 10→20→40→60 minutes; transient 2→5→10→20 minutes. Reset attempt after a confirmed successful send.
+3. Add deterministic tests/integration guards proving cooldown blocks send until due and does not inspect assistant prose.
+4. Inspect current popup target schema before writing; ensure cooldown fields do not conflict with saved settings and that response/interval start still targets the correct matching ChatGPT tab.
+5. If a usable browser execution path is available, perform focused real ChatGPT smoke tests for composer/send receipt and one repeat mode without destructive broad testing. Record exact evidence; otherwise leave browser smoke explicitly open rather than simulating it.
+6. Keep CI green and update reconstruction/gap evidence only for genuinely closed gaps. Do not generate final release ZIP until browser gates pass.
 
 DONE_CRITERIA=
-- prompt composer and repeat policy are runtime-wired and integration-tested.
-- interval and cooldown behavior are operational and duplicate-fenced.
-- dashboard structural classification is canonicalized.
-- CI remains green; gap audit honest; next baton ~14 useful minutes.
+- structural cooldown classification and tested runtime gating are implemented without semantic chat reading.
+- repeat success clears/reduces cooldown state correctly and duplicate runners remain fenced.
+- current CI/integration/rebuildability gates pass.
+- browser smoke evidence is either real and recorded or honestly remains an explicit release blocker.
+- next baton is another ~14 useful minutes unless genuinely externally gated.
 
 DO_NOT_REPEAT=
-- broad Library search for exact v0.8.6 runtime
-- popup.js 53-byte diagnosis
-- unsafe whole-file popup replacement
-- duplicate signal/state/policy implementations
+- popup.js 53-byte diagnosis or unsafe whole-file replacement
+- duplicate prompt/repeat/route-state implementations
+- response-only interval rejection
+- local dashboard tab classifier separate from route-state
 - treating static CI as live browser/release proof
 
 BLOCKER=
-Exact later runtime bytes remain unavailable; reconstruction is deliberately v0.8.7. Real browser smoke testing remains a release gate.
+Exact later v0.8.6 runtime bytes remain unavailable, so reconstruction remains deliberately v0.8.7. Real ChatGPT browser smoke testing remains a release gate.
 
 SCHEDULER_RULE=
 Preferred/default NEXT_WAKE_DELAY_MINUTES=14. Shorter is exceptional and requires concrete unavoidable SHORT_PACKAGE_REASON.
