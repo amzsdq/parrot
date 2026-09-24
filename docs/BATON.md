@@ -4,48 +4,47 @@ Latest-only continuation pointer; full snapshots are mirrored to `docs/DEVELOPME
 
 CURRENT_VERSION=v0.8.7-reconstruction
 STATUS=CONTINUE
-WORK_PACKAGE_ID=PARROT-BATON-012
-PACKAGE_KIND=OPERATOR_DIAGNOSTICS_AND_RELEASE_EVIDENCE
+WORK_PACKAGE_ID=PARROT-BATON-013
+PACKAGE_KIND=FINAL_STATIC_AUDIT_AND_SMOKE_PREP
 EXPECTED_ACTIVE_MINUTES=14
 NEXT_WAKE_DELAY_MINUTES=14
 SHORT_PACKAGE_REASON=NONE
 WORK_TIME_MARKER_ISSUE=amzsdq/parrot#1
 
 CURRENT_TASK=
-Improve operator-visible structural cooldown diagnostics and tighten remaining release evidence without pretending static checks are live-browser proof.
+Audit the reconstructed v0.8.7 runtime for remaining static correctness gaps and prepare a precise real-browser smoke checklist/evidence format.
 
 COMPLETED_PREVIOUS=
-- Structural cooldown classification, repeat cooldown ladders, response/interval gating, popup-schema compatibility, and routed-send cooldown backpressure are implemented.
-- `cooldownEnabled=false` is honored by target runners; canonical persisted attempt field is existing `cooldownStep`, with legacy `cooldownAttempt` read compatibility.
-- CI includes structural semantic-boundary and cooldown storage/backpressure contracts.
-- Exact popup numeric safety repair completed through a guarded one-shot repair: source occurrence counts were checked, the resulting Git blob was required to equal `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`, and `node --check` passed before commit.
-- Repository `extension/popup.js` now actually reports blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`; four clamps are restored: delay ≥0, interval ≥1/default11, maxRepeats ≥0, runtimeMin ≥0.
-- CI now regression-checks those four clamps. Route State Contract run 35970616840 passed after the exact popup repair and guard addition.
-- The temporary write-enabled one-shot repair workflow and consumed repair helper were removed after successful use, leaving no unnecessary persistent privileged repair path.
-- README provenance was updated to record the exact repaired popup blob.
-- Real ChatGPT browser smoke remains honestly unverified because this runtime has no interactive unpacked-extension Chrome execution surface.
+- Structural cooldown classification, repeat ladders, response/interval gating, popup-schema compatibility, routed-send cooldown backpressure, and popup numeric safety repair are implemented and regression-guarded.
+- Exact repaired `popup.js` blob is `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`.
+- Temporary privileged repair machinery was removed after successful exact repair.
+- Dashboard now treats active cooldown as attention and shows structural cooldown kind/error code plus `cooldownUntil`; it does not inspect chat message DOM/prose for this diagnostic.
+- Cooldown contract test now guards dashboard structural diagnostics in addition to popup clamps, runner storage compatibility, and route backpressure.
+- Route State Contract run 35970752260 passed all 22 functional/check steps after the dashboard runtime change; the subsequent contract-only guard run is expected to verify the same diagnostic seam.
+- README records current cooldown behavior, expanded verification commands, and repaired popup provenance.
+- Real ChatGPT browser smoke remains unverified because this runtime has no interactive unpacked-extension Chrome execution surface.
 
 NEXT_ACTION=
-1. Inspect dashboard worker columns and add a compact structural cooldown diagnostic (kind + remaining/until) only if it improves operator diagnosis without chat prose. Keep `lastError` structural/code-only.
-2. Strengthen cooldown reset/migration tests, especially popup disable/start/stop and content success reset; eliminate legacy `cooldownAttempt` writes entirely if Chrome storage compatibility permits, retaining read-only migration fallback as needed.
-3. Audit current v0.8.7 static release gates for false-positive claims: selector candidates that have not been live-observed must remain marked unverified, and no CI result may be described as browser proof.
-4. Re-run full CI and inspect individual steps after changes.
-5. If an actual browser/extension execution surface becomes available, run focused ChatGPT smoke: unpacked load, exact target tab resolution, composer/send strong receipt, one response or interval repeat, and cooldown selector observation if naturally available. Do not induce destructive rate limits merely to test cooldown.
-6. Final release ZIP remains gated on real browser smoke; do not mark PROGRAM_COMPLETE before that evidence exists.
+1. Audit background/content/dashboard/popup interactions for state-field drift, stale statuses, and lifecycle edge cases: pause/resume, stop, completion, cooldown expiry, target deletion, closed/discarded/frozen tabs, ambiguous route retry/resolve, and runner restart after extension reload.
+2. Add only high-value deterministic tests for concrete gaps found. Prefer behavioral primitives/contracts over brittle source-string checks when feasible.
+3. Review structural cooldown selector candidates and clearly separate observed/stable selectors from speculative fallbacks. Do not claim a selector is live-valid without browser evidence.
+4. Write/refresh a concise real-browser smoke checklist with exact pass/fail evidence required for unpacked load, target resolution, send strong receipt, response mode, interval mode, COMPLETE/WAKE/MESSAGE routing, ambiguity handling, and non-destructive cooldown observation.
+5. Re-run full CI and inspect individual steps. Keep final ZIP/release blocked until browser smoke passes.
+6. If an actual Chrome/extension execution surface becomes available, execute the smoke checklist rather than doing more static speculation.
 
 DONE_CRITERIA=
-- operator cooldown state is diagnosable without semantic chat content or the change is explicitly rejected as low-value.
-- cooldown reset/migration semantics have stronger deterministic coverage.
-- full static CI/integration/rebuildability remains green.
+- remaining static lifecycle gaps are either fixed/tested or explicitly recorded.
+- live-browser smoke checklist is concrete and non-fakeable.
+- full static CI/integration/rebuildability is green.
 - browser smoke is either real and recorded or explicitly remains the release blocker.
 - next baton remains ~14 useful minutes unless genuinely externally gated.
 
 DO_NOT_REPEAT=
-- popup 53-byte diagnosis or popup repair (now closed and regression-guarded)
-- temporary privileged repair workflow (removed after use)
-- invented claim that static CI proves live ChatGPT selectors
-- semantic parsing of assistant/user prose for rate-limit detection
-- treating scheduler prearm save as proof of successor wake
+- popup 53-byte diagnosis/repair
+- temporary privileged repair workflow
+- static-CI-as-browser-proof claims
+- semantic parsing of assistant/user prose
+- scheduler-prearm-as-successor-wake claims
 
 BLOCKER=
 Real ChatGPT browser smoke requires an actual browser/extension execution surface and remains a release gate. Exact later v0.8.6 background/content/dashboard bytes remain unavailable, so reconstruction remains deliberately v0.8.7.
