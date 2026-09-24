@@ -6,10 +6,11 @@ OUT=${3:-parrot-release.zip}
 NOTES=${4:-docs/RELEASE_NOTES_DRAFT.md}
 RELEASE_SHA=$(git rev-parse HEAD)
 LOCK_DIR="$OUT.build.lock"
+EVIDENCE="$OUT.live-result.txt"
 
 cleanup_failed_release() {
   local rc=$?
-  rm -f -- "$OUT.ready" "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt"
+  rm -f -- "$OUT.ready" "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt" "$EVIDENCE"
   exit "$rc"
 }
 trap cleanup_failed_release ERR
@@ -26,16 +27,10 @@ cleanup_snapshots() {
 }
 trap cleanup_snapshots EXIT
 
-# Freeze committed release tooling and notes before trusting any downstream
-# helper. No caller-controlled bypass exists: every delegated production gate
-# executes from RELEASE_SHA bytes.
 git archive "$RELEASE_SHA" -- scripts "$NOTES" | tar -x -C "$TOOLING_SNAPSHOT"
 TOOL_ROOT=$TOOLING_SNAPSHOT
 run_tool() { bash "$TOOL_ROOT/scripts/$1" "${@:2}"; }
 
-# Publication is a single-writer transaction per output path. Acquire this
-# before invalidating readiness: a losing concurrent builder must not delete or
-# overwrite any state owned by the active builder.
 if ! mkdir -- "$LOCK_DIR" 2>/dev/null; then
   echo "FAIL: release output is already being built: $OUT" >&2
   exit 1
@@ -66,7 +61,9 @@ rm -f "$GATE_OUTPUT_FILE"
 
 run_tool verify-release-repository.sh
 run_tool build-release-archive.sh "$OUT" "$VERSION" "$CANDIDATE_SNAPSHOT/tree/extension"
-run_tool write-release-provenance.sh "$OUT" "$CANDIDATE_SHA" "$RELEASE_SHA" "$RESULT_SNAPSHOT"
+# Preserve exactly the immutable bytes that passed the candidate-bound verifier.
+cp -- "$RESULT_SNAPSHOT" "$EVIDENCE"
+run_tool write-release-provenance.sh "$OUT" "$CANDIDATE_SHA" "$RELEASE_SHA" "$EVIDENCE"
 run_tool publish-release-ready.sh "$OUT"
-echo "PASS: final release artifact built and marked publish-ready only after candidate-bound authenticated live evidence, immutable candidate-tree identity, frozen release tooling, serialized publication, and limitation gates."
+echo "PASS: final release artifact built with durable verified live evidence and marked publish-ready only after all release gates."
 trap - ERR
