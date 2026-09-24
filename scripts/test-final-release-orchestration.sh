@@ -23,6 +23,7 @@ EOF
 
 install_success_stubs() {
   stub scripts/prepare-release-output.sh cleanup 'rm -f -- "$1" "$1.sha256" "$1.files.txt" "$1.provenance.txt"'
+  stub scripts/verify-release-worktree.sh worktree
   stub scripts/verify-release-preflight.sh preflight
   stub scripts/verify-candidate-live-evidence.sh live-evidence "echo 'PASS: fake candidate-bound evidence'"
   stub scripts/verify-release-limitations.sh limitations
@@ -36,12 +37,13 @@ OUT=$TMP/release.zip
 bash scripts/build-final-release.sh docs/LIVE_SMOKE_RESULT.md HEAD "$OUT" docs/RELEASE_NOTES_DRAFT.md >/dev/null
 
 mapfile -t CALLS < "$LOG"
-EXPECTED=(cleanup preflight live-evidence limitations repository archive provenance)
+EXPECTED=(cleanup worktree preflight live-evidence limitations repository archive provenance)
 [[ ${#CALLS[@]} -eq ${#EXPECTED[@]} ]] || { echo "FAIL: expected ${#EXPECTED[@]} delegated calls, got ${#CALLS[@]}" >&2; printf '%s\n' "${CALLS[@]}" >&2; exit 1; }
 for i in "${!EXPECTED[@]}"; do
   [[ ${CALLS[$i]%%|*} == "${EXPECTED[$i]}" ]] || { echo "FAIL: call $i expected ${EXPECTED[$i]}, got ${CALLS[$i]}" >&2; exit 1; }
 done
 
+grep -Fq 'worktree|docs/RELEASE_NOTES_DRAFT.md' "$LOG" || { echo 'FAIL: release notes not passed to worktree gate' >&2; exit 1; }
 grep -Fq 'preflight|HEAD' "$LOG" || { echo 'FAIL: candidate SHA not passed to preflight' >&2; exit 1; }
 grep -Fq 'live-evidence|docs/LIVE_SMOKE_RESULT.md HEAD' "$LOG" || { echo 'FAIL: live evidence args not candidate-bound' >&2; exit 1; }
 grep -Fq "archive|$OUT" "$LOG" || { echo 'FAIL: archive output path not propagated' >&2; exit 1; }
@@ -72,11 +74,12 @@ assert_blocked_at() {
 
 # Cleanup is the first operation; its own artificial failure is only an exit-propagation check.
 assert_blocked_at scripts/prepare-release-output.sh cleanup 26 1 no
-assert_blocked_at scripts/verify-release-preflight.sh preflight 23 2
-assert_blocked_at scripts/verify-candidate-live-evidence.sh live-evidence 24 3
-assert_blocked_at scripts/verify-release-limitations.sh limitations 25 4
-assert_blocked_at scripts/verify-release-repository.sh repository 29 5
-assert_blocked_at scripts/build-release-archive.sh archive 27 6
-assert_blocked_at scripts/write-release-provenance.sh provenance 28 7
+assert_blocked_at scripts/verify-release-worktree.sh worktree 30 2
+assert_blocked_at scripts/verify-release-preflight.sh preflight 23 3
+assert_blocked_at scripts/verify-candidate-live-evidence.sh live-evidence 24 4
+assert_blocked_at scripts/verify-release-limitations.sh limitations 25 5
+assert_blocked_at scripts/verify-release-repository.sh repository 29 6
+assert_blocked_at scripts/build-release-archive.sh archive 27 7
+assert_blocked_at scripts/write-release-provenance.sh provenance 28 8
 
-echo 'PASS: final release builder invalidates stale output first, delegates gates in order, propagates failures, and leaves no misleading publishable state.'
+echo 'PASS: final release builder invalidates stale output first, gates committed release tooling, delegates in order, propagates failures, and leaves no misleading publishable state.'
