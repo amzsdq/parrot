@@ -7,4 +7,12 @@ for(const[name,value]of[['Browser + version',browser],['OS',os],['UTC start',sta
 const rows=new Map();for(const line of lines){const m=line.match(/^\|\s*S(\d+)\b[^|]*\|\s*(PASS|FAIL|NOT_OBSERVED|UNVERIFIED)\s*\|\s*([^|]*)\|\s*([^|]*)\|/);if(m)rows.set(Number(m[1]),{state:m[2],evidence:m[3].trim(),utc:m[4].trim()});}
 for(const n of[1,2,3,4,5,6,7,8,11]){const r=rows.get(n);if(r?.state!=='PASS'){console.error(`FAIL: S${n} must be PASS, got ${r?.state||'MISSING'}`);bad=true;continue}if(!r.evidence||!r.utc){console.error(`FAIL: S${n} PASS requires structural evidence and UTC`);bad=true}}
 for(const n of[9,10]){const r=rows.get(n);if(!['PASS','NOT_OBSERVED'].includes(r?.state)){console.error(`FAIL: S${n} must be PASS or explicit NOT_OBSERVED, got ${r?.state||'MISSING'}`);bad=true;continue}if(!r.evidence||!r.utc){console.error(`FAIL: S${n} ${r.state} requires evidence/limitation rationale and UTC`);bad=true}}
-if(/\|\s*S\d+\b[^|]*\|\s*FAIL\s*\|/.test(s)){console.error('FAIL: observed FAIL remains in live evidence');bad=true}if(bad)process.exit(1);console.log(`PASS: M6 live evidence is complete and provenance-bearing for candidate ${expected}`);if(rows.get(9)?.state==='NOT_OBSERVED'||rows.get(10)?.state==='NOT_OBSERVED')console.log('LIMITATION: S9/S10 NOT_OBSERVED must be carried into release notes.');
+if(/\|\s*S\d+\b[^|]*\|\s*FAIL\s*\|/.test(s)){console.error('FAIL: observed FAIL remains in live evidence');bad=true}
+const requiredDecision=field('- Required S1–S8 + S11 all PASS'),s9Decision=field('- S9'),s10Decision=field('- S10'),m6Decision=field('- M6 decision'),decisionUtc=field('- UTC decision time'),limitations=field('- Explicit limitations carried to release notes');
+if(!/^YES\b/i.test(requiredDecision)){console.error('FAIL: decision must explicitly confirm required S1-S8 + S11 all PASS');bad=true}
+if(clean(s9Decision)!==rows.get(9)?.state){console.error('FAIL: S9 decision summary does not match result row');bad=true}
+if(clean(s10Decision)!==rows.get(10)?.state){console.error('FAIL: S10 decision summary does not match result row');bad=true}
+if(clean(m6Decision)!=='PASS'){console.error('FAIL: M6 decision must explicitly be PASS');bad=true}
+if(!decisionUtc){console.error('FAIL: missing UTC decision time');bad=true}
+const hasNotObserved=rows.get(9)?.state==='NOT_OBSERVED'||rows.get(10)?.state==='NOT_OBSERVED';if(hasNotObserved&&!limitations){console.error('FAIL: NOT_OBSERVED S9/S10 requires explicit release-note limitation text');bad=true}
+if(bad)process.exit(1);console.log(`PASS: M6 live evidence is complete, internally consistent, and provenance-bearing for candidate ${expected}`);if(hasNotObserved)console.log('LIMITATION: S9/S10 NOT_OBSERVED must be carried into release notes.');
