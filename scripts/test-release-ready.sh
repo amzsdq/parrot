@@ -11,6 +11,8 @@ mkdir -p "$PAYLOAD"
 printf '{"manifest_version":3,"name":"Parrot","version":"0.8.7"}\n' > "$PAYLOAD/manifest.json"
 printf 'payload\n' > "$PAYLOAD/content.js"
 
+verify_ready() { bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" "$RELEASE_SHA"; }
+
 make_evidence() {
   local f="$OUT.live-result.txt"
   {
@@ -37,14 +39,14 @@ make_release() {
 
 make_release
 bash "$ROOT/scripts/publish-release-ready.sh" "$OUT"
-bash "$ROOT/scripts/verify-release-ready.sh" "$OUT"
+verify_ready
 [[ -f "$OUT.ready" ]]
 grep -Fxq "live_evidence_sha256=$LIVE_SHA" "$OUT.ready"
 
 for target in "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt" "$OUT.live-result.txt"; do
   make_release; bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
   printf 'post-publish mutation\n' >> "$target"
-  if bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" >/dev/null 2>&1; then echo "FAIL: post-publish mutation remained consumable: $target" >&2; exit 1; fi
+  if verify_ready >/dev/null 2>&1; then echo "FAIL: post-publish mutation remained consumable: $target" >&2; exit 1; fi
 done
 
 # Even recomputing provenance and readiness cannot make semantically invalid live evidence consumable.
@@ -53,34 +55,42 @@ sed -i 's/Authenticated ChatGPT session structurally confirmed: YES/Authenticate
 LIVE_SHA=$(sha256sum "$OUT.live-result.txt" | awk '{print $1}')
 sed -i "s/^live_result_sha256=.*/live_result_sha256=$LIVE_SHA/" "$OUT.provenance.txt"
 bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
-if bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" >/dev/null 2>&1; then echo 'FAIL: self-consistent invalid live evidence remained consumable' >&2; exit 1; fi
+if verify_ready >/dev/null 2>&1; then echo 'FAIL: self-consistent invalid live evidence remained consumable' >&2; exit 1; fi
 
 make_release
 printf 'forged-entry.js\n' > "$OUT.files.txt"
 bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
-if bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" >/dev/null 2>&1; then echo 'FAIL: accepted forged file-list semantics' >&2; exit 1; fi
+if verify_ready >/dev/null 2>&1; then echo 'FAIL: accepted forged file-list semantics' >&2; exit 1; fi
 
 make_release
 printf '%s  other-release.zip\n' "$ARTIFACT_SHA" > "$OUT.sha256"
 bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
-if bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" >/dev/null 2>&1; then echo 'FAIL: accepted checksum for another artifact name' >&2; exit 1; fi
+if verify_ready >/dev/null 2>&1; then echo 'FAIL: accepted checksum for another artifact name' >&2; exit 1; fi
 
 make_release
 sed -i 's/^candidate_sha=.*/candidate_sha=1111111111111111111111111111111111111111/' "$OUT.provenance.txt"
 bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
-if bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" >/dev/null 2>&1; then echo 'FAIL: accepted wrong candidate provenance' >&2; exit 1; fi
+if verify_ready >/dev/null 2>&1; then echo 'FAIL: accepted wrong candidate provenance' >&2; exit 1; fi
 
 make_release
 sed -i 's/^release_repo_sha=.*/release_repo_sha=short/' "$OUT.provenance.txt"
 bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
-if bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" >/dev/null 2>&1; then echo 'FAIL: accepted malformed release commit identity' >&2; exit 1; fi
+if verify_ready >/dev/null 2>&1; then echo 'FAIL: accepted malformed release commit identity' >&2; exit 1; fi
+
+# A syntactically valid forged repository SHA plus recomputed ready hashes must not
+# be able to misattribute the release to a different tooling/repository commit.
+make_release
+FORGED_RELEASE_SHA=1111111111111111111111111111111111111111
+sed -i "s/^release_repo_sha=.*/release_repo_sha=$FORGED_RELEASE_SHA/" "$OUT.provenance.txt"
+bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
+if verify_ready >/dev/null 2>&1; then echo 'FAIL: accepted self-consistent forged release repository attribution' >&2; exit 1; fi
 
 make_release; bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
 printf 'artifact_sha256=duplicate\n' >> "$OUT.ready"
-if bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" >/dev/null 2>&1; then echo 'FAIL: duplicate ready-marker identity remained consumable' >&2; exit 1; fi
+if verify_ready >/dev/null 2>&1; then echo 'FAIL: duplicate ready-marker identity remained consumable' >&2; exit 1; fi
 
 rm -f "$OUT.ready"; printf 'tampered\n' >> "$OUT"
 if bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null 2>&1; then echo 'FAIL: tampered artifact became publish-ready' >&2; exit 1; fi
 [[ ! -e "$OUT.ready" ]]
 
-echo 'PASS: readiness preserves and revalidates durable live evidence plus release byte/semantic/candidate identity binding.'
+echo 'PASS: readiness preserves durable live evidence and binds release bytes, candidate identity, and trusted release-repository identity.'
