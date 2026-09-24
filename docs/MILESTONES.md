@@ -15,7 +15,7 @@ Candidate source commit `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`; Actions run 
 Phase: VERIFY
 PLAN: execute `docs/LIVE_SMOKE_CHECKLIST.md` against exact M5 candidate. Static CI never substitutes for real browser/ChatGPT evidence.
 - M6-C1 PASS — exact M5 candidate source was checked out and loaded as an unpacked extension in real Google Chrome on GitHub-hosted Ubuntu. `M6 Chromium Load Smoke` run `35980470638` SUCCESS: Chrome launched with only candidate extension enabled and the deterministic unpacked extension ID; DevTools exposed `chrome-extension://<candidate-id>/dashboard.html`. This proves extension/manifest/dashboard load in real Chromium, not ChatGPT behavior.
-- M6-C2 UNVERIFIED — Dashboard controls non-active exact matching real ChatGPT tabs.
+- M6-C2 UNVERIFIED — Dashboard controls non-active exact matching real ChatGPT tabs. Changed headless probes `35980886241`, `35980991521`, and callback retry `35981102115` narrowed the boundary but do not PASS it. The latest run reached real `https://chatgpt.com/` only as unauthenticated Cloudflare `Just a moment...`; the dashboard DevTools target subsequently resolved to `chrome-error://chromewebdata/`, where `chrome.tabs` was unavailable. Therefore the failed `chrome.tabs.query` is an invalid execution-surface result, not evidence that candidate Dashboard logic is broken. Do not repeat this same headless approach unchanged.
 - M6-C3 UNVERIFIED — response/interval modes work in real ChatGPT DOM.
 - M6-C4 UNVERIFIED — reload recovery/duplicate-runner fence works in real ChatGPT.
 - M6-C5 UNVERIFIED — COMPLETE/WAKE/MESSAGE runId routing works in real ChatGPT flow.
@@ -23,7 +23,7 @@ PLAN: execute `docs/LIVE_SMOKE_CHECKLIST.md` against exact M5 candidate. Static 
 - M6-C7 UNVERIFIED — popup/dashboard viewport and larger-fleet UX smoke.
 - M6-C8 UNVERIFIED — observed failures reopen affected earlier milestone rather than being waived.
 CURRENT WORK:
-1. M6-C2 is next. It requires authenticated real ChatGPT tabs, which the current GitHub runner does not possess. Seek a supported authenticated browser execution surface; never substitute static/headless local pages for ChatGPT behavior.
+1. M6-C2 is next. Required evidence needs a supported interactive/authenticated real Chrome+ChatGPT surface that can keep the candidate extension page alive and expose real ChatGPT conversation tabs. Static/headless/local pages cannot substitute.
 2. Candidate-bound checklist/result template and machine evidence verifier are ready: `docs/LIVE_SMOKE_CHECKLIST.md`, `docs/LIVE_SMOKE_RESULT_TEMPLATE.md`, `scripts/verify-live-smoke-result.mjs`.
 3. While authenticated browser evidence is unavailable, continue independent safe M7 preparation without marking M6/M7 DONE.
 
@@ -34,7 +34,7 @@ Phase: PLAN
 - M7-C3 UNVERIFIED — README/run instructions match behavior.
 - M7-C4 UNVERIFIED — limitations/deferred adapters explicit.
 - M7-C5 UNVERIFIED — PROGRAM_COMPLETE only after durable evidence.
-Preparation: `docs/RELEASE_NOTES_DRAFT.md` and README candidate install/limitations are ready; no final release claim before M6.
+Preparation: `docs/RELEASE_NOTES_DRAFT.md`, README candidate install/limitations, candidate-bound live evidence verifier, and fail-closed final release builder are ready. Obsolete BATON mirror workflow was removed after the BATON layer was retired. No final release claim before M6.
 
 ## Completed milestone evidence summary
 - M0: ChatGPT-first, structural-only status/signals, milestone-only control model.
