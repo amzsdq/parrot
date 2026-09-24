@@ -62,8 +62,7 @@ trap 'rm -f -- "$EXPECTED_LIST"' EXIT
 unzip -Z1 "$OUT" | LC_ALL=C sort > "$EXPECTED_LIST"
 cmp -s "$EXPECTED_LIST" "$OUT.files.txt" || { echo 'FAIL: file-list sidecar does not describe artifact contents' >&2; exit 1; }
 
-EXPECTED=$(awk 'NR==1 {print $1}' "$OUT.sha256")
-CHECKSUM_NAME=$(awk 'NR==1 {print $2}' "$OUT.sha256")
+IFS=' ' read -r EXPECTED CHECKSUM_NAME < "$OUT.sha256"
 [[ $(wc -l < "$OUT.sha256") -eq 1 && -n "$EXPECTED" && "$EXPECTED" == "$ARTIFACT_SHA" ]] || { echo 'FAIL: checksum sidecar is not bound to artifact' >&2; exit 1; }
 [[ "$CHECKSUM_NAME" == "$OUT" || "$CHECKSUM_NAME" == "$(basename "$OUT")" ]] || { echo 'FAIL: checksum sidecar names a different artifact' >&2; exit 1; }
 

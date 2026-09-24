@@ -50,6 +50,18 @@ verify_ready
 [[ -f "$OUT.ready" ]]
 grep -Fxq "live_evidence_sha256=$LIVE_SHA" "$OUT.ready"
 
+# Caller-selected publication paths may contain spaces and nested directories.
+# The checksum sidecar must preserve the complete artifact name rather than
+# tokenizing it on whitespace.
+ORIGINAL_OUT=$OUT
+OUT="$TMP/nested dir/release with spaces.zip"
+mkdir -p "$(dirname "$OUT")"
+make_release
+bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
+trust_current_release
+verify_ready >/dev/null
+OUT=$ORIGINAL_OUT
+
 for target in "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt" "$OUT.live-result.txt"; do
   make_release; bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null; trust_current_release
   printf 'post-publish mutation\n' >> "$target"
