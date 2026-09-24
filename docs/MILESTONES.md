@@ -95,8 +95,8 @@ CURRENT WORK:
 4. Inspect exact-head CI after newest delay/race changes; fix failures rather than weakening tests.
 5. When M2-C6 and M2-C8 are PASS, execute VERIFY for all M2 criteria, mark M2 DONE, and immediately continue into M3.
 
-### M3 — Multi-worker dashboard and structural fleet UX — IN_PROGRESS
-Phase: VERIFY
+### M3 — Multi-worker dashboard and structural fleet UX — PENDING
+Resume Phase: VERIFY
 
 PLAN:
 - Validate dashboard usability and action clarity for representative larger fleets while keeping all status structural rather than semantic.
@@ -109,8 +109,8 @@ Required criteria:
 - M3-C5 UNVERIFIED — larger-fleet UX clarity is validated against a representative multi-worker fixture or real browser scenario.
 - M3-C6 UNVERIFIED — error/ambiguous/cooldown states are understandable and actionable in actual UI flow.
 
-### M4 — Popup, templates, cooldown, and recovery UX — IN_PROGRESS
-Phase: VERIFY
+### M4 — Popup, templates, cooldown, and recovery UX — PENDING
+Resume Phase: VERIFY
 
 PLAN:
 - Verify compact popup, configurable routing/onboarding templates, cooldown/recovery clarity, and no unintended default vertical scroll.
