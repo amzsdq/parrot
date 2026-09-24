@@ -72,6 +72,22 @@ The M7 implementation gate is therefore:
 
 Do not parse GitHub CLI certificate/timestamp output to build a weaker local cryptographic verifier. `gh attestation verify` remains the cryptographic boundary; Parrot only supplies stricter identity policy to it.
 
+### Dedicated release workflow security boundary
+
+Signer-path pinning is necessary but not sufficient. GitHub provenance records workflow/repository/ref/event context, but an attestation only proves that the identified workflow made the claim; it does not make unsafe workflow inputs trustworthy. The eventual dedicated release workflow therefore becomes part of the trusted computing base and MUST be reviewed as such before its canonical path is frozen.
+
+Minimum design for that workflow after M6 PASS:
+
+1. **Trusted trigger only.** Prefer an explicit maintainer-controlled release dispatch after M6 PASS. Do not use `pull_request`, `pull_request_target`, `issue_comment`, `workflow_run` fed by PR artifacts, or any trigger that can cause privileged publication while incorporating fork/PR-controlled executable content. If `workflow_dispatch` is used, the workflow must fail closed unless the checked-out/ref-resolved commit is the explicitly authorized release commit.
+2. **Exact source identity.** Build and construct the publication record only from the authorized full 40-hex `release_repo_sha`; do not build from a mutable branch/tag name and later merely write a chosen SHA into provenance. Checkout must be detached/pinned to that exact commit and the workflow must verify `HEAD == release_repo_sha` before building.
+3. **No untrusted executable inputs.** Release inputs may select only already-authorized immutable identities; they must not become shell fragments, checkout repository/ref selectors, action names, script paths, arbitrary artifact URLs, or other executable/control-plane values. Do not download and execute artifacts produced by untrusted PR/fork workflows.
+4. **Least privilege.** Start with `permissions: {}` (or equivalent explicit deny-by-default) and grant only `contents: read`, `id-token: write`, and `attestations: write` to the smallest job that needs them. Add release-asset write permission only if/when publication is actually implemented and isolate that job from untrusted data. Do not grant repository-wide write permissions merely because attestation needs OIDC.
+5. **Pinned dependencies.** Third-party actions and reusable workflows are executable members of the trusted builder. Pin them to reviewed immutable commit SHAs. If a reusable workflow performs the attestation, that reusable workflow—not merely the caller—is the signer identity that the consumer must pin. Do not allow a caller input to select the reusable workflow/ref dynamically.
+6. **No privileged PR bridge.** Never use `pull_request_target`, `issue_comment`, or `workflow_run` as a bridge that obtains write/OIDC/attestation authority and then checks out, downloads, sources, or executes PR/fork-controlled code or artifacts. GitHub explicitly treats artifacts from other workflows as untrusted data in this class of design.
+7. **Attest last from derived bytes.** Generate the publication record only after the final ZIP and `.ready` are immutable and their digests are computed by the trusted job. Attest the exact record path that is subsequently published; do not accept caller-supplied digest fields as authoritative.
+
+These are implementation gates, not a request to create the workflow now. Once the real workflow exists, executable regressions should target its actual policy: wrong signer workflow, wrong source commit/ref, and any accepted untrusted-input path that can alter the attested record. Do not add speculative pattern-only tests before there is executable workflow behavior to test.
+
 ## Publication ordering
 
 1. M6 must be fully PASS against exact candidate `f51e4ba53753dade3bd3f9a64e2b3c50ca05d691`.
