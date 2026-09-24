@@ -75,7 +75,7 @@ Exact v0.8.6 `background.js`, `content.js`, `dashboard.js` bytes는 확보되지
 
 ## popup.js provenance
 
-Exact target bytes/blob은 확보되어 있지만 현재 repository `popup.js`는 아직 네 numeric clamp/default가 빠진 blob입니다. 이 차이는 정확히 진단되어 있으며 release 전에 byte-preserving repair 또는 동등한 검증된 수정이 필요합니다. 실패한 부분 교체 시도로 파일 전체가 손상된 적이 있으나 즉시 이전 blob으로 복구했고 CI rebuildability gate가 다시 통과했습니다.
+Recovered target의 네 numeric clamp/default 회귀는 정확히 수리됐습니다. 현재 repository `extension/popup.js`는 Git blob `04b3a2b425f37ee33de2b7194bd7dbea8aaa93da`로 recovered exact target과 일치하며, CI의 cooldown/storage contract가 delay ≥ 0, interval ≥ 1, maxRepeats ≥ 0, runtimeMin ≥ 0 clamp 존재를 회귀 검사합니다.
 
 ## Development principles
 
