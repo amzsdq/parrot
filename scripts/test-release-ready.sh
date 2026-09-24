@@ -10,8 +10,9 @@ RELEASE_SHA=$(git rev-parse HEAD)
 mkdir -p "$PAYLOAD"
 printf '{"manifest_version":3,"name":"Parrot","version":"0.8.7"}\n' > "$PAYLOAD/manifest.json"
 printf 'payload\n' > "$PAYLOAD/content.js"
+TRUSTED_ARTIFACT_SHA=
 
-verify_ready() { bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" "$RELEASE_SHA"; }
+verify_ready() { bash "$ROOT/scripts/verify-release-ready.sh" "$OUT" "$RELEASE_SHA" "$TRUSTED_ARTIFACT_SHA"; }
 
 make_evidence() {
   local f="$OUT.live-result.txt"
@@ -38,6 +39,7 @@ make_release() {
 }
 
 make_release
+TRUSTED_ARTIFACT_SHA=$ARTIFACT_SHA
 bash "$ROOT/scripts/publish-release-ready.sh" "$OUT"
 verify_ready
 [[ -f "$OUT.ready" ]]
@@ -49,7 +51,19 @@ for target in "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt" "$OUT.
   if verify_ready >/dev/null 2>&1; then echo "FAIL: post-publish mutation remained consumable: $target" >&2; exit 1; fi
 done
 
-# Even recomputing provenance and readiness cannot make semantically invalid live evidence consumable.
+# Recomputing every bundle-local binding around different release bytes still
+# cannot defeat the trusted artifact digest supplied by the publication channel.
+make_release
+printf 'forged payload\n' > "$PAYLOAD/forged.js"
+(cd "$PAYLOAD" && zip -q -X -r "$OUT" .)
+rm -f "$PAYLOAD/forged.js"
+unzip -Z1 "$OUT" | LC_ALL=C sort > "$OUT.files.txt"
+sha256sum "$OUT" > "$OUT.sha256"
+FORGED_ARTIFACT_SHA=$(sha256sum "$OUT" | awk '{print $1}')
+sed -i "s/^artifact_sha256=.*/artifact_sha256=$FORGED_ARTIFACT_SHA/" "$OUT.provenance.txt"
+bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
+if verify_ready >/dev/null 2>&1; then echo 'FAIL: accepted self-consistent forged release bytes under trusted repository attribution' >&2; exit 1; fi
+
 make_release
 sed -i 's/Authenticated ChatGPT session structurally confirmed: YES/Authenticated ChatGPT session structurally confirmed: NO/' "$OUT.live-result.txt"
 LIVE_SHA=$(sha256sum "$OUT.live-result.txt" | awk '{print $1}')
@@ -77,8 +91,6 @@ sed -i 's/^release_repo_sha=.*/release_repo_sha=short/' "$OUT.provenance.txt"
 bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null
 if verify_ready >/dev/null 2>&1; then echo 'FAIL: accepted malformed release commit identity' >&2; exit 1; fi
 
-# A syntactically valid forged repository SHA plus recomputed ready hashes must not
-# be able to misattribute the release to a different tooling/repository commit.
 make_release
 FORGED_RELEASE_SHA=1111111111111111111111111111111111111111
 sed -i "s/^release_repo_sha=.*/release_repo_sha=$FORGED_RELEASE_SHA/" "$OUT.provenance.txt"
@@ -93,4 +105,4 @@ rm -f "$OUT.ready"; printf 'tampered\n' >> "$OUT"
 if bash "$ROOT/scripts/publish-release-ready.sh" "$OUT" >/dev/null 2>&1; then echo 'FAIL: tampered artifact became publish-ready' >&2; exit 1; fi
 [[ ! -e "$OUT.ready" ]]
 
-echo 'PASS: readiness preserves durable live evidence and binds release bytes, candidate identity, and trusted release-repository identity.'
+echo 'PASS: readiness binds release bytes and repository attribution to external trusted identities while preserving durable semantic live evidence.'
