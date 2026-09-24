@@ -26,6 +26,10 @@ expect_fail() {
 # Clean exact candidate tree should pass even when release tooling commits are newer.
 bash "$PREFLIGHT" "$CANDIDATE_SHA"
 
+# Final release is bound to the exact M5/M6 candidate, not merely any commit
+# whose extension tree happens to match it.
+expect_fail wrong_candidate bash "$PREFLIGHT" HEAD
+
 printf '\n// preflight unstaged sentinel\n' >> extension/background.js
 expect_fail unstaged bash "$PREFLIGHT" "$CANDIDATE_SHA"
 git checkout -- extension/background.js
@@ -46,4 +50,4 @@ git add extension/background.js
 git commit -qm 'test: candidate drift sentinel'
 expect_fail candidate_drift bash "$PREFLIGHT" "$CANDIDATE_SHA"
 
-echo 'PASS: executable release preflight rejects unstaged, staged, untracked, and committed candidate drift.'
+echo 'PASS: executable release preflight rejects wrong candidate identity plus unstaged, staged, untracked, and committed candidate drift.'
