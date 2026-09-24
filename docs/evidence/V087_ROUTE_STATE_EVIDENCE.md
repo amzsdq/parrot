@@ -17,15 +17,9 @@ The model is deliberately semantic-content blind. Ambiguity receipts are sanitiz
 
 Initial route-state CI run `35957380718` succeeded. After adding the route-queue integration layer, CI exposed a real syntax regression in the new test runner (`resolve` binding collision with `node:path`). The runner was corrected rather than bypassed.
 
-GitHub Actions run `35957550973` on commit `795773a648ed6e25ddafe17429767b5a1fb85c49` then completed successfully. Its workflow syntax-checks both runtime primitives and both runners, executes the route-state contract vectors, and executes route-queue integration tests proving:
+GitHub Actions run `35957550973` on commit `795773a648ed6e25ddafe17429767b5a1fb85c49` then completed successfully. Its workflow syntax-checks both runtime primitives and both runners, executes the route-state contract vectors, and executes route-queue integration tests proving pending-only periodic dispatch, state-only ambiguity reconciliation, explicit retry/resolve semantics, strong delivered transition, semantic-field stripping, active-preserving pruning, structural tab classification, and bounded ambiguity outbox behavior.
 
-- periodic processing dispatches pending only;
-- ambiguity reconciliation is state-only and does not dispatch;
-- manual retry creates exactly one explicit dispatch call;
-- manual resolve is terminal without dispatch;
-- strong receipt can mark delivered;
-- ambiguity persistence strips unapproved/semantic fields;
-- state/outbox/pruning/structural-tab vectors remain green.
+The queue layer was then hardened with an in-memory per-worker-lifetime `inFlight` fence so overlapping asynchronous ticks cannot click the same queue id concurrently. GitHub Actions run `35957765364` on commit `09cd7005c932e154bee1ebac89ec276510b0b11e` completed successfully and includes a gated-concurrency regression test proving two overlapping `processEligible()` calls result in only one underlying dispatch for the same queue id. This fence supplements, rather than replaces, durable pending/ambiguous/resolved/delivered state.
 
 This is repository-native execution evidence on GitHub's Ubuntu runner with Node 22. It does not claim the still-incomplete extension source tree is release-ready.
 
@@ -37,7 +31,7 @@ The selected loading strategy for v0.8.7 is one canonical browser-global `route-
 
 ## Handoff-log durability
 
-`.github/workflows/mirror-baton-log.yml` now mirrors each unseen latest `docs/BATON.md` snapshot into `docs/DEVELOPMENT_LOG.md` append-only, keyed by `WORK_PACKAGE_ID`. Its first run successfully appended `PARROT-BATON-004`, eliminating the connector's full-file-replacement append hazard for future handoffs.
+`.github/workflows/mirror-baton-log.yml` mirrors each unseen `docs/BATON.md` snapshot into `docs/DEVELOPMENT_LOG.md` append-only, keyed by `WORK_PACKAGE_ID`. PARROT-BATON-004 and PARROT-BATON-005 were successfully mirrored. The workflow was subsequently hardened for overlapping handoffs: it preserves the triggering commit's BATON, rebuilds its append from fresh `origin/main`, retries bounded push races, and is idempotent when the marker already exists. Workflow run `35957683490` completed successfully after that hardening.
 
 ## Exact popup evidence
 
