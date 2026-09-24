@@ -7,7 +7,6 @@ NOTES=${4:-docs/RELEASE_NOTES_DRAFT.md}
 RELEASE_SHA=$(git rev-parse HEAD)
 LOCK_DIR="$OUT.build.lock"
 
-rm -f -- "$OUT.ready"
 cleanup_failed_release() {
   local rc=$?
   rm -f -- "$OUT.ready" "$OUT" "$OUT.sha256" "$OUT.files.txt" "$OUT.provenance.txt"
@@ -34,14 +33,15 @@ git archive "$RELEASE_SHA" -- scripts "$NOTES" | tar -x -C "$TOOLING_SNAPSHOT"
 TOOL_ROOT=$TOOLING_SNAPSHOT
 run_tool() { bash "$TOOL_ROOT/scripts/$1" "${@:2}"; }
 
-# Publication is a single-writer transaction per output path. Without this,
-# concurrent builders can invalidate or overwrite one another's sidecars/ready
-# marker between otherwise-correct fail-closed gates.
+# Publication is a single-writer transaction per output path. Acquire this
+# before invalidating readiness: a losing concurrent builder must not delete or
+# overwrite any state owned by the active builder.
 if ! mkdir -- "$LOCK_DIR" 2>/dev/null; then
   echo "FAIL: release output is already being built: $OUT" >&2
   exit 1
 fi
 LOCK_HELD=YES
+rm -f -- "$OUT.ready"
 
 run_tool prepare-release-output.sh "$OUT"
 run_tool verify-release-worktree.sh "$NOTES"
