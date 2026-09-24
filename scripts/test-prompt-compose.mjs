@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+const require=createRequire(import.meta.url);
+const p=require('../extension/prompt-compose.js');
+const a={id:'a',workerLabel:'A',routeKey:'A',runId:'r1',prompt:'WORK',routingEnabled:true,onboardingEnabled:true,onboardingTemplate:'SELF={{SELF}} TARGETS={{TARGETS}}',completionEnabled:true,appendCompletionInstruction:true,completionInstructionTemplate:'DONE={{SIGNAL_URL}}'};
+const first=p.compose(a,[a,{id:'b',workerLabel:'B',routeKey:'B'}],{firstSend:true});
+assert.match(first,/WORK/);assert.match(first,/SELF=A/);assert.match(first,/A: A/);assert.match(first,/B: B/);assert.match(first,/DONE=/);
+const repeat=p.compose(a,[a],{firstSend:false});assert.doesNotMatch(repeat,/SELF=A/);assert.match(repeat,/DONE=/);
+assert.equal(p.onboarding({...a,routingEnabled:false},[a]),'');
+assert.equal(p.completion({...a,completionEnabled:false}),'');
+console.log('PASS: prompt composition vectors');
