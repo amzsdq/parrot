@@ -12,35 +12,37 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: f51e4ba53753dade3bd3f9a64e2b3c50ca05d691
-      - name: Record browser
-        run: google-chrome --version
-      - name: Launch exact candidate unpacked extension
+      - name: Record browser and candidate
         run: |
-          set -euo pipefail
+          google-chrome --version
+          test "$(git rev-parse HEAD)" = "f51e4ba53753dade3bd3f9a64e2b3c50ca05d691"
+      - name: Launch exact candidate in modern headless Chromium
+        run: |
+          set -u
           EXT="$GITHUB_WORKSPACE/extension"
           PROFILE="$RUNNER_TEMP/parrot-chrome"
-          xvfb-run -a google-chrome \
-            --no-sandbox \
+          google-chrome --headless=new --no-sandbox \
             --user-data-dir="$PROFILE" \
             --disable-extensions-except="$EXT" \
             --load-extension="$EXT" \
             --remote-debugging-port=9222 \
             --no-first-run --no-default-browser-check \
             about:blank >"$RUNNER_TEMP/chrome.log" 2>&1 &
-          echo $! > "$RUNNER_TEMP/chrome.pid"
+          PID=$!
+          ready=0
           for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:9222/json/version > "$RUNNER_TEMP/version.json"; then break; fi
+            if curl -fsS http://127.0.0.1:9222/json/version > "$RUNNER_TEMP/version.json"; then ready=1; break; fi
             sleep 1
           done
-          cat "$RUNNER_TEMP/version.json"
-          curl -fsS http://127.0.0.1:9222/json/list > "$RUNNER_TEMP/targets.json"
-          cat "$RUNNER_TEMP/targets.json"
-          grep -Eq 'chrome-extension://[^/]+/(background\.js|popup\.html|dashboard\.html)' "$RUNNER_TEMP/targets.json" || {
-            echo 'No extension target visible through DevTools; Chrome log follows:' >&2
-            cat "$RUNNER_TEMP/chrome.log" >&2
+          echo '--- chrome log ---'; cat "$RUNNER_TEMP/chrome.log" || true
+          echo '--- devtools version ---'; cat "$RUNNER_TEMP/version.json" || true
+          if [ "$ready" != 1 ]; then echo 'DevTools endpoint never became ready' >&2; exit 1; fi
+          curl -fsS http://127.0.0.1:9222/json/list | tee "$RUNNER_TEMP/targets.json"
+          if grep -Eq 'chrome-extension://[^/]+/(background\.js|popup\.html|dashboard\.html)' "$RUNNER_TEMP/targets.json"; then
+            echo 'PASS: real Chromium exposed candidate extension target.'
+          else
+            echo 'No extension target visible through DevTools target list.' >&2
+            kill "$PID" || true
             exit 1
-          }
-      - name: Candidate binding
-        run: |
-          test "$(git rev-parse HEAD)" = "f51e4ba53753dade3bd3f9a64e2b3c50ca05d691"
-          echo 'PASS: real Chromium loaded an extension target from exact M5 candidate source.'
+          fi
+          kill "$PID" || true
