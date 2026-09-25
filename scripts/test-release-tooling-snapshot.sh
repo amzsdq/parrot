@@ -20,7 +20,7 @@ cmp -s "$TMP/committed-helper" "$SNAP/scripts/build-release-archive.sh" || { ech
 # Nested live verifier must resolve beside the frozen wrapper, never from CWD.
 printf '#!/usr/bin/env node\nprocess.exit(0);\n' > scripts/verify-live-smoke-result.mjs
 printf 'definitely-not-valid-live-evidence\n' > "$TMP/invalid-live-result.md"
-if bash "$SNAP/scripts/verify-candidate-live-evidence.sh" "$TMP/invalid-live-result.md" f51e4ba53753dade3bd3f9a64e2b3c50ca05d691 >/dev/null 2>&1; then
+if bash "$SNAP/scripts/verify-candidate-live-evidence.sh" "$TMP/invalid-live-result.md" 10b053c1a949dcab72f6f74703e9b07c10865e70 >/dev/null 2>&1; then
   echo 'FAIL: frozen live-evidence helper escaped to mutable worktree Node verifier' >&2; exit 1
 fi
 
