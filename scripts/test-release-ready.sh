@@ -5,7 +5,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 OUT="$TMP/release.zip"
 PAYLOAD="$TMP/payload"
-CANDIDATE_SHA=f51e4ba53753dade3bd3f9a64e2b3c50ca05d691
+CANDIDATE_SHA=10b053c1a949dcab72f6f74703e9b07c10865e70
 RELEASE_SHA=$(git rev-parse HEAD)
 mkdir -p "$PAYLOAD"
 printf '{"manifest_version":3,"name":"Parrot","version":"0.8.7"}\n' > "$PAYLOAD/manifest.json"
