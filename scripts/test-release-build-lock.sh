@@ -11,7 +11,7 @@ READY="$OUT.ready"
 # concurrent builder must fail before touching the active builder's state.
 mkdir "$LOCK"
 printf 'active-builder-ready-sentinel\n' > "$READY"
-if bash "$ROOT/scripts/build-final-release.sh" "$TMP/missing-live-result.md" f51e4ba53753dade3bd3f9a64e2b3c50ca05d691 "$OUT" docs/RELEASE_NOTES_DRAFT.md >/dev/null 2>&1; then
+if bash "$ROOT/scripts/build-final-release.sh" "$TMP/missing-live-result.md" 10b053c1a949dcab72f6f74703e9b07c10865e70 "$OUT" docs/RELEASE_NOTES_DRAFT.md >/dev/null 2>&1; then
   echo 'FAIL: concurrent release builder acquired an already-owned output' >&2
   exit 1
 fi
@@ -23,7 +23,7 @@ fi
 # lock on every exit path so a failed builder cannot deadlock future recovery.
 rmdir "$LOCK"
 rm -f "$READY"
-if bash "$ROOT/scripts/build-final-release.sh" "$TMP/missing-live-result.md" f51e4ba53753dade3bd3f9a64e2b3c50ca05d691 "$OUT" docs/RELEASE_NOTES_DRAFT.md >/dev/null 2>&1; then
+if bash "$ROOT/scripts/build-final-release.sh" "$TMP/missing-live-result.md" 10b053c1a949dcab72f6f74703e9b07c10865e70 "$OUT" docs/RELEASE_NOTES_DRAFT.md >/dev/null 2>&1; then
   echo 'FAIL: builder unexpectedly succeeded without live evidence' >&2
   exit 1
 fi
