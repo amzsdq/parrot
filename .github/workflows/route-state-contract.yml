@@ -43,6 +43,7 @@ jobs:
       - run: node scripts/test-dashboard-fleet.mjs
       - run: node scripts/test-popup-ux-contract.mjs
       - run: node scripts/test-chatgpt-adapter-structure.mjs
+      - run: node scripts/test-content-send-boundary.mjs
       - run: node scripts/test-cooldown-storage-contract.mjs
       - run: node scripts/test-live-smoke-verifier.mjs
       - run: node scripts/test-publication-record-verifier.mjs
