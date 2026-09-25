@@ -7,7 +7,7 @@ EXPECTED_ARTIFACT_SHA=${3:?missing trusted expected release artifact sha256}
 EXPECTED_READY_SHA=${4:?missing trusted expected ready marker sha256}
 READY="$OUT.ready"
 EVIDENCE="$OUT.live-result.txt"
-EXPECTED_CANDIDATE=f51e4ba53753dade3bd3f9a64e2b3c50ca05d691
+EXPECTED_CANDIDATE=10b053c1a949dcab72f6f74703e9b07c10865e70
 SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 
 [[ "$EXPECTED_RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo 'FAIL: trusted expected release repository sha is not a full commit identity' >&2; exit 1; }
