@@ -1,5 +1,5 @@
 import{readFileSync}from'node:fs';
-const path=process.argv[2]||'docs/LIVE_SMOKE_RESULT.md',expected=process.argv[3]||'f51e4ba53753dade3bd3f9a64e2b3c50ca05d691';let s;try{s=readFileSync(path,'utf8')}catch(e){console.error(`FAIL: missing live result ${path}`);process.exit(1)}
+const path=process.argv[2]||'docs/LIVE_SMOKE_RESULT.md',expected=process.argv[3]||'10b053c1a949dcab72f6f74703e9b07c10865e70';let s;try{s=readFileSync(path,'utf8')}catch(e){console.error(`FAIL: missing live result ${path}`);process.exit(1)}
 const lines=s.split(/\r?\n/),field=(label)=>{const line=lines.find(x=>x.startsWith(label+':'));return line?line.slice(label.length+1).trim():''},clean=x=>x.replace(/^`|`$/g,'').trim(),utc=x=>/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(x);
 if(clean(field('Candidate source SHA'))!==expected){console.error('FAIL: live result is not bound to expected candidate SHA');process.exit(1)}
 const browser=field('- Browser + version'),os=field('- OS'),loaded=field('- Extension loaded from exact candidate source/artifact'),authenticated=field('- Authenticated ChatGPT session structurally confirmed'),authEvidence=field('- Authentication structural evidence (no identity/secrets)'),start=field('- UTC start'),targets=field('- ChatGPT worker URLs/labels used (URLs only; no chat prose)');let bad=false;
