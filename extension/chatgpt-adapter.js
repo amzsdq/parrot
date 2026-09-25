@@ -41,6 +41,7 @@
       if (document.querySelector('button[data-testid="stop-button"]')) return true;
       if (document.querySelector('[data-message-author-role="assistant"][aria-busy="true"]')) return true;
       if (document.querySelector('[data-message-author-role="assistant"] [aria-busy="true"]')) return true;
+      if (document.querySelector('[data-content-search-turn-key] [role="status"][aria-busy="true"]')) return true;
       return false;
     },
     classifyCooldown() {
@@ -60,16 +61,18 @@
       );
     },
     getSendButton() {
+      const composer = this.getComposer();
       return (
         document.querySelector('button[data-testid="send-button"]') ||
         document.querySelector('button[data-testid$="send-button"]') ||
         document.querySelector('#composer-submit-button') ||
         document.querySelector('button[aria-label="Send prompt"]') ||
-        document.querySelector('button.composer-submit-btn')
+        document.querySelector('button.composer-submit-btn') ||
+        composer?.closest('form')?.querySelector('button[type="submit"]')
       );
     },
     getUserMessageCount() {
-      return document.querySelectorAll('[data-message-author-role="user"]').length;
+      return document.querySelectorAll('[data-message-author-role="user"], [data-user-message-bubble="true"]').length;
     },
     setComposerText(text) {
       const el = this.getComposer();
