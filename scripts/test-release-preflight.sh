@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT=$(git rev-parse --show-toplevel)
 PREFLIGHT="$ROOT/scripts/verify-release-preflight.sh"
-CANDIDATE_SHA=${1:-f51e4ba53753dade3bd3f9a64e2b3c50ca05d691}
+CANDIDATE_SHA=${1:-10b053c1a949dcab72f6f74703e9b07c10865e70}
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
