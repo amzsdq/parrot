@@ -13,8 +13,8 @@ jobs:
         with: { fetch-depth: 0 }
       - name: Restore exact M5 candidate extension tree
         run: |
-          git checkout f51e4ba53753dade3bd3f9a64e2b3c50ca05d691 -- extension
-          test -z "$(git diff f51e4ba53753dade3bd3f9a64e2b3c50ca05d691 -- extension)"
+          git checkout 10b053c1a949dcab72f6f74703e9b07c10865e70 -- extension
+          test -z "$(git diff 10b053c1a949dcab72f6f74703e9b07c10865e70 -- extension)"
           google-chrome --version
       - name: Launch exact candidate dashboard
         run: |
