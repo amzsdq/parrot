@@ -2,7 +2,7 @@
 set -euo pipefail
 
 CANDIDATE_SHA=${1:?candidate SHA required}
-EXPECTED_CANDIDATE_SHA=f51e4ba53753dade3bd3f9a64e2b3c50ca05d691
+EXPECTED_CANDIDATE_SHA=10b053c1a949dcab72f6f74703e9b07c10865e70
 
 # M6 evidence is bound to one exact candidate. Accepting an arbitrary caller-
 # supplied commit here would let a final build describe a different candidate
