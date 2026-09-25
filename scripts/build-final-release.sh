@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 RESULT=${1:-docs/LIVE_SMOKE_RESULT.md}
-CANDIDATE_SHA=${2:-f51e4ba53753dade3bd3f9a64e2b3c50ca05d691}
+CANDIDATE_SHA=${2:-10b053c1a949dcab72f6f74703e9b07c10865e70}
 OUT=${3:-parrot-release.zip}
 NOTES=${4:-docs/RELEASE_NOTES_DRAFT.md}
 RELEASE_SHA=$(git rev-parse HEAD)
