@@ -64,21 +64,27 @@ jobs:
       - run: node scripts/validate-contracts.mjs
       - run: node scripts/validate-v087-integration.mjs
       - run: node scripts/verify-repo.mjs
-      - name: Build candidate ZIP
+      - name: Build exact M6 candidate ZIP
+        env:
+          M6_CANDIDATE_SHA: 10b053c1a949dcab72f6f74703e9b07c10865e70
         run: |
-          rm -f parrot-v0.8.7-candidate.zip candidate.sha256 candidate-files.txt
-          (cd extension && zip -X -r ../parrot-v0.8.7-candidate.zip . -x '*.DS_Store')
+          rm -rf .candidate-source parrot-v0.8.7-candidate.zip candidate.sha256 candidate-files.txt candidate-source.txt
+          mkdir .candidate-source
+          git archive "$M6_CANDIDATE_SHA" -- extension | tar -x -C .candidate-source
+          (cd .candidate-source/extension && zip -X -r ../../parrot-v0.8.7-candidate.zip . -x '*.DS_Store')
           unzip -t parrot-v0.8.7-candidate.zip
           unzip -Z1 parrot-v0.8.7-candidate.zip | LC_ALL=C sort > candidate-files.txt
           sha256sum parrot-v0.8.7-candidate.zip | tee candidate.sha256
+          printf '%s\n' "$M6_CANDIDATE_SHA" > candidate-source.txt
           unzip -p parrot-v0.8.7-candidate.zip manifest.json | grep -F '"version": "0.8.7"'
       - name: Upload NON-RELEASE candidate evidence
         uses: actions/upload-artifact@v4
         with:
-          name: parrot-v0.8.7-candidate-NON-RELEASE-${{ github.sha }}
+          name: parrot-v0.8.7-candidate-NON-RELEASE-10b053c1a949dcab72f6f74703e9b07c10865e70
           path: |
             parrot-v0.8.7-candidate.zip
             candidate.sha256
             candidate-files.txt
+            candidate-source.txt
           if-no-files-found: error
           retention-days: 14
