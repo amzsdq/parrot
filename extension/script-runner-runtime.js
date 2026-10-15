@@ -14,7 +14,7 @@
   function serial(fn){const call=chain.then(fn);chain=call.catch(()=>{});return call;}
   async function load(key,max){const x=(await storage.get(key))[key];if(x===undefined)return [];
    if(!Array.isArray(x)||x.length>max)throw Error('STORAGE_INVALID');return x;}
-  const project=x=>({id:x.id,name:x.name,conversationUrl:x.conversationUrl,enabled:x.enabled,
+  const project=x=>({id:x.id,name:x.name,source:x.source,conversationUrl:x.conversationUrl,enabled:x.enabled,
     approvedAt:x.approvedAt,sha256:x.sha256,bytes:new TextEncoder().encode(x.source).length});
   return Object.freeze({handle:(cmd,sender)=>{
    if(!sender||sender.tab||sender.url!==expectedPage||cmd?.uiAction!==true)
