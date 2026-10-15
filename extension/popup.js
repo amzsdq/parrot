@@ -54,6 +54,7 @@ async function init() {
   renderForm();
 
   $('newTarget').addEventListener('click', () => addNewTarget(true));
+  $('scriptRunner').addEventListener('click', () => chrome.tabs.create({url:chrome.runtime.getURL('script-runner.html')}));
   $('dashboard').addEventListener('click', () => chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') }));
   $('captureUrl').addEventListener('click', captureCurrentUrl);
   $('start').addEventListener('click', startTarget);
