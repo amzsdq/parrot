@@ -16,6 +16,7 @@ jobs:
         with:
           node-version: '22'
       - run: node --test scripts/test-script-runner-policy.cjs scripts/test-script-runner-runtime.cjs
+      - run: node --test scripts/test-script-runner-contract.cjs
       - run: node --check extension/script-runner-policy.js
       - run: node --check extension/script-runner-runtime.js
       - run: node --check extension/script-runner-background.js
