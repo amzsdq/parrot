@@ -1,0 +1,25 @@
+name: Parrot Script Runner Experimental
+on:
+  push:
+    branches: [feature/script-runner-vnext]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  script-runner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test scripts/test-script-runner-policy.cjs scripts/test-script-runner-runtime.cjs
+      - run: node --check extension/script-runner-policy.js
+      - run: node --check extension/script-runner-runtime.js
+      - run: node --check extension/script-runner-background.js
+      - run: node --check extension/script-runner-ui.js
+      - run: node --check extension/background.js
+      - run: node --check extension/popup.js
+      - run: node -e "const m=require('./extension/manifest.json');if(!m.permissions.includes('userScripts')||m.minimum_chrome_version!=='135'||m.version!=='0.9.0')process.exit(1)"
