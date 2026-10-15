@@ -1,4 +1,5 @@
 importScripts('route-state.js','route-queue.js','signal-protocol.js','repeat-policy.js');
+importScripts('script-runner-policy.js','script-runner-runtime.js','script-runner-background.js');
 const ROUTE_QUEUE_KEY='parrotRouteQueue',TARGETS_KEY='parrotTargets',EVENTS_KEY='parrotEvents',ROUTE_ALARM='parrot-route-queue',ROUTE_PERIOD_MINUTES=1,MAX_ROUTE_RECORDS=300,MAX_EVENTS=500;
 const loadQueue=async()=>{const d=await chrome.storage.local.get(ROUTE_QUEUE_KEY);return Array.isArray(d[ROUTE_QUEUE_KEY])?d[ROUTE_QUEUE_KEY]:[];},saveQueue=async q=>chrome.storage.local.set({[ROUTE_QUEUE_KEY]:q});
 async function loadTargets(){const d=await chrome.storage.local.get(TARGETS_KEY);return Array.isArray(d[TARGETS_KEY])?d[TARGETS_KEY]:[];}async function findTarget(id){return(await loadTargets()).find(t=>t.id===id||t.routeKey===id||t.workerLabel===id)||null;}async function patchTarget(id,patch){const ts=await loadTargets(),i=ts.findIndex(t=>t.id===id||t.routeKey===id||t.workerLabel===id);if(i<0)return null;ts[i]={...ts[i],...patch};await chrome.storage.local.set({[TARGETS_KEY]:ts});return ts[i];}
