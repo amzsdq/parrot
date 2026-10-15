@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Parrot Script Runner (experimental)</title>
+<style>
+:root{color-scheme:light dark;font:14px system-ui}body{max-width:850px;margin:32px auto;padding:0 16px}h1{font-size:22px}
+label{display:block;font-weight:600;margin:14px 0 5px}textarea,input,select{box-sizing:border-box;width:100%;padding:9px;border:1px solid #888;border-radius:6px;font:inherit}
+textarea{min-height:210px;font-family:ui-monospace,monospace}button{padding:9px 14px;margin:7px 6px 3px 0;cursor:pointer}
+section{padding:16px;margin:14px 0;border:1px solid #8886;border-radius:9px}.warning{border-left:4px solid #d99a19;padding-left:12px}
+pre{white-space:pre-wrap;overflow-wrap:anywhere}small{opacity:.85}
+</style></head><body><h1>Parrot Script Runner <small>(실험용 0.9.0)</small></h1>
+<section class="warning"><strong>수동 실행만 지원합니다.</strong>
+<p>AI 대화의 링크나 코드가 자동 실행되지 않습니다. 승인된 JavaScript는 지정한 ChatGPT 대화 페이지를 변경할 수 있습니다.
+비밀번호·키·쿠키를 코드에 넣지 마세요. 브라우저 확장 설정에서 <strong>Allow User Scripts</strong>를 켜야 합니다.</p></section>
+<section>
+<label for="saved">저장된 스크립트</label><select id="saved"><option value="">새 스크립트</option></select>
+<label for="name">스크립트 이름</label><input id="name" maxlength="50" value="hello">
+<label for="target">정확한 ChatGPT 대화 URL</label><input id="target" type="url" placeholder="https://chatgpt.com/c/..." required>
+<label for="source">JavaScript 코드 (최대 16KiB)</label><textarea id="source" spellcheck="false">console.log("hello");</textarea>
+<div><button id="save">비활성 상태로 저장</button><button id="approve">코드 확인 후 승인</button><button id="disable">사용 중지</button></div>
+</section>
+<section><h2>실행</h2>
+<p>해당 대화가 열린 Chrome 탭이 정확히 하나인지 검사합니다. <strong>실행 버튼을 직접 클릭했을 때만</strong> 해당 탭에서 한 번 실행합니다.</p>
+<button id="run">선택한 스크립트 한 번 실행</button>
+<p><small>Chrome API가 반환돼도 페이지 동작이 실제 성공했는지는 별도 확인해야 합니다. 응답이 불확실하면 동일 요청을 자동 재실행하지 않습니다.</small></p></section>
+<section><h2>결과</h2><pre id="status" role="status" aria-live="polite">대기</pre></section>
+<script src="script-runner-policy.js"></script><script src="script-runner-ui.js"></script>
+</body></html>
