@@ -12,7 +12,7 @@ test('runner is opt-in; background dispatch limited to extension manager',()=>{
  assert(b.includes('PARROT_USER_SCRIPT_REQUEST'));
  assert(r.includes("sender.url!==expectedPage"));
  assert(r.includes("sender.tab"));
- assert(r.includes("cmd.uiAction!==true"));
+ assert(r.includes("cmd?.uiAction!==true"));
  assert(r.includes("world:'USER_SCRIPT'"));
  assert(r.includes("userScripts.execute"));
 });
