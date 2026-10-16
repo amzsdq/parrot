@@ -39,7 +39,10 @@
     }
 
     async function recordDelivered(queueId, receipt = {}) {
-      return mutate(queueId, (item) => ({ ...item, status: 'delivered', deliveredAt: receipt.deliveredAt ?? now(), lastError: '', ambiguity: null }));
+      return mutate(queueId, (item) => {
+        if (!item || item.status === 'delivered' || item.status === 'resolved') return item;
+        return { ...item, status: 'delivered', deliveredAt: receipt.deliveredAt ?? now(), lastError: '', ambiguity: null };
+      });
     }
 
     async function reconcileAmbiguity(receipt) {
@@ -54,7 +57,7 @@
       if (!updated) return { ok: false, reason: 'queue_item_not_found' };
       if (updated.status !== 'pending') return { ok: false, reason: 'not_ambiguous' };
       const result = await dispatchOnce(updated);
-      return { ok: !result?.skipped, item: updated, dispatched: !result?.skipped, result };
+      return { ok: result?.ok === true, item: updated, dispatched: !result?.skipped, result };
     }
 
     async function manualResolve(queueId) {
