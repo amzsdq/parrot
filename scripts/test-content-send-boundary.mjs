@@ -36,7 +36,7 @@ const ctx={
   ParrotRepeatPolicy:{stopReason(t){return Number(t.sentCount||0)>=1?'max_repeats':null;},cooldownDue(){return true;},nextCooldown(){return{kind:'',attempt:0,until:0,minutes:0};},intervalDue(){return true;}},
   ParrotRunnerPolicy:{shouldArm(){return false;},autoArmDelayMs(){return 0;}},
   ParrotPromptCompose:{compose(t){return t.prompt;}},
-  setTimeout,clearTimeout,Date,Promise,console
+  document:{visibilityState:'hidden'},setTimeout,clearTimeout,Date,Promise,console
 };
 ctx.globalThis=ctx;
 vm.runInNewContext(source,ctx);
@@ -52,4 +52,17 @@ assert.equal(clicks,1);
 const stopDeadline=Date.now()+400;
 while(Date.now()<stopDeadline&&storage.parrotTargets[0].status!=='stopped')await new Promise(r=>setTimeout(r,20));
 assert.equal(storage.parrotTargets[0].stopReason,'max_repeats');
-console.log('PASS: delayed ChatGPT submit control is awaited and strong receipt completes once');
+
+// Even if the target remains marked running, an operator-visible ChatGPT tab
+// must NEVER be focused or clicked by the Parrot retry/interval loop.
+ctx.document.visibilityState='visible';
+storage.parrotTargets[0]={...storage.parrotTargets[0],status:'running',sentCount:0,lastError:''};
+const userVisible=await new Promise(resolve=>onMessage({type:'PARROT_START',targetId:'t'},null,resolve));
+assert.equal(userVisible.ok,true);
+const deadlineVisible=Date.now()+900;
+while(Date.now()<deadlineVisible && storage.parrotTargets[0].lastError!=='human_visible_tab')
+  await new Promise(r=>setTimeout(r,15));
+assert.equal(storage.parrotTargets[0].lastError,'human_visible_tab');
+assert.equal(clicks,1,'visible tab must not trigger any further automatic Send clicks');
+storage.parrotTargets[0]={...storage.parrotTargets[0],status:'stopped'};
+console.log('PASS: delayed background Send once; visible user tab repeatedly denied all new clicks');
