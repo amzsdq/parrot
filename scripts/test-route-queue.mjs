@@ -59,3 +59,21 @@ const second = await concurrentApi.processEligible();
 releaseDispatch();
 await first;
 assert(concurrentDispatches === 1 && second[0]?.result?.reason === 'dispatch_in_flight', 'same-worker concurrent ticks cannot double-dispatch one queue id');
+
+
+const lateOnResolved = await api.recordDelivered('p1', { deliveredAt: 7000 });
+assert(lateOnResolved.status === 'resolved' && lateOnResolved.deliveredAt === undefined, 'late delivery receipt cannot rewrite manually resolved terminal route');
+
+const duplicateDelivered = await api.recordDelivered('a1', { deliveredAt: 8000 });
+assert(duplicateDelivered.status === 'delivered' && duplicateDelivered.deliveredAt === 6000, 'duplicate receipt preserves original confirmed delivery');
+
+let rejectedQueue = [{ queueId: 'fail1', status: 'ambiguous' }];
+let rejectedDispatches = 0;
+const rejectedApi = context.globalThis.ParrotRouteQueue.createRouteQueueApi({
+  load: async () => structuredClone(rejectedQueue),
+  save: async (next) => { rejectedQueue = structuredClone(next); },
+  dispatch: async () => { rejectedDispatches++; return { ok: false, reason: 'content_unreachable' }; },
+  now: () => 9000
+});
+const rejectedRetry = await rejectedApi.manualRetry('fail1');
+assert(!rejectedRetry.ok && rejectedRetry.dispatched && rejectedDispatches === 1 && rejectedRetry.result.reason === 'content_unreachable', 'manual retry reports rejected dispatch instead of success');
