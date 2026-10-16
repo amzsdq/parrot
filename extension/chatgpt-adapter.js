@@ -75,9 +75,13 @@
       return document.querySelectorAll('[data-message-author-role="user"], [data-user-message-bubble="true"]').length;
     },
     setComposerText(text) {
+      // Experimental Parrot never steals user-visible ChatGPT focus/scroll.
+      // Keep the background-only rule aligned with PCBridge Companion.
+      if (document.visibilityState !== 'hidden') return false;
       const el = this.getComposer();
       if (!el) return false;
-      el.focus();
+      el.focus({ preventScroll: true });
+      if (document.visibilityState !== 'hidden') return false;
 
       if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) {
         const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
