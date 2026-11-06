@@ -60,6 +60,7 @@ jobs:
       - run: bash scripts/test-release-ready.sh
       - run: bash scripts/test-release-archive.sh
       - run: bash scripts/test-final-release-boundaries.sh
+      - run: bash scripts/test-release-runbook.sh
       - run: bash scripts/test-final-release-orchestration.sh
       - run: node scripts/validate-contracts.mjs
       - run: node scripts/validate-v087-integration.mjs
