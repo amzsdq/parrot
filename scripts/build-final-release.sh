@@ -27,9 +27,11 @@ cleanup_snapshots() {
 }
 trap cleanup_snapshots EXIT
 
-git archive "$RELEASE_SHA" -- scripts "$NOTES" | tar -x -C "$TOOLING_SNAPSHOT"
+git archive "$RELEASE_SHA" -- scripts "$NOTES" docs/RELEASE_PROCESS.md | tar -x -C "$TOOLING_SNAPSHOT"
 TOOL_ROOT=$TOOLING_SNAPSHOT
 run_tool() { bash "$TOOL_ROOT/scripts/$1" "${@:2}"; }
+# Read the FROZEN release guide before lock or artifact mutation.
+bash "$TOOL_ROOT/scripts/verify-release-runbook.sh"
 
 if ! mkdir -- "$LOCK_DIR" 2>/dev/null; then
   echo "FAIL: release output is already being built: $OUT" >&2
