@@ -1,5 +1,8 @@
 # Parrot / 앵무새
 
+**Mandatory release instructions:** read [AGENTS.md](AGENTS.md), [the rewrite release guide](docs/RELEASE_PROCESS.md), and the shared [Deployment Method Router](https://github.com/amzsdq/PCBridge/blob/main/docs/DEPLOYMENT_METHOD_ROUTER.md) before building, publishing or installing. `scripts/build-final-release.sh` and `scripts/publish-release-ready.sh` now require a source-frozen runbook read; the guard is **not** user permission, live Chrome smoke or ACK. This repository's release path is independent of `amzsdq/PCB-Parrot` M7/M8.
+
+
 ChatGPT 대화를 반복 실행하고 `COMPLETE`, `WAKE`, `MESSAGE` 신호를 처리하는 로컬 Chrome Extension입니다. 실제 provider adapter는 현재 ChatGPT만 지원합니다. Claude / Gemini / Grok은 adapter boundary만 유지하며 아직 구현하지 않습니다.
 
 ## Status
