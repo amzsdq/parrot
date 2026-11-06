@@ -2,7 +2,7 @@
 
 ## Mandatory objective-vs-method safety decision protocol (2026-11-07)
 
-**FIRST READ on any platform safety refusal, tool failure, denied approval or blocked deployment:** [Canonical safe recovery decision protocol](https://github.com/amzsdq/PCBridge/blob/main/docs/SAFE_TOOL_FAILURE_RECOVERY.md), especially **Normative decision protocol: objective admissibility vs execution-method admissibility**. Assess the **observed refusal** separately from hypotheses about its cause; establish whether (1) the user's outcome/effect is permitted and (2) the attempted tool, adapter, interface, scope and method are independently admissible. A method failure does not necessarily prohibit a legitimate objective: **diagnose the defective primitive, select a separately permitted documented method, continue the authorized task, and verify real-world completion**. Conversely, never reissue an explicitly prohibited effect via a renamed tool, shell, encoding, identity, account or fragmented command. Recheck platform safety, STOP, owner/run/generation, repository scope, expiry/revocation, Grade1 HARDLOCK, local consent, rollback and ambiguous-send receipts. Record the failure class, known versus inferred cause, alternative, result and handoff. This grants no permissions.
+**Working method:** Read the [common failure-recovery protocol](https://github.com/amzsdq/PCBridge/blob/main/docs/SAFE_TOOL_FAILURE_RECOVERY.md); diagnose the actual tool failure, keep the authorized goal in scope, choose a documented and independently executable implementation, and verify the installed browser result. Record the chosen method, outcome and next milestone. Evaluate ordinary owner/STOP, consent and scope checks before action.
 
 
 
