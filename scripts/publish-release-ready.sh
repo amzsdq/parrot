@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Marker publication independently checks the release guide, even when called directly.
+bash "$(dirname -- "${BASH_SOURCE[0]}")/verify-release-runbook.sh"
+
 OUT=${1:?usage: publish-release-ready.sh <release.zip>}
 READY="$OUT.ready"
 EVIDENCE="$OUT.live-result.txt"
